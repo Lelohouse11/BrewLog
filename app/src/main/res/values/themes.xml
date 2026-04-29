@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme. This uses Material Light with no ActionBar as the main UI is built with Compose. -->
+    <style name="Theme.BrewLog" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--
+        Starting theme for the Splash Screen API.
+        This is used as the initial theme in AndroidManifest.xml.
+    -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Background color shown during app startup (Matches DarkGrey in monochrome theme) -->
+        <item name="windowSplashScreenBackground">#121212</item>
+        <!-- The icon displayed in the center of the splash screen -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- The theme the app will transition to after the splash screen is dismissed -->
+        <item name="postSplashScreenTheme">@style/Theme.BrewLog</item>
+    </style>
+</resources>
