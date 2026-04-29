@@ -1,15 +1,60 @@
+# Built artifacts
+bin/
+gen/
+out/
+build/
+.gradle/
+.navigation/
+app/build/
+
+# IDE files
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.factorypath
+
+# Local configuration
 local.properties
+captures/
+
+# External native build
+.externalNativeBuild
+.cxx/
+cmake/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Android Studio / IntelliJ
+*.hprof
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/modules/
+.idea/vcs.xml
+.idea/runConfigurations/
+
+# Gradle files
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Log files
+*.log
+
+# Keystore files (CRITICAL: Do not commit your production keystore)
+*.jks
+*.keystore
+*.jceks
+*.p12
+*.pfx
+
+# Secrets
+google-services.json
