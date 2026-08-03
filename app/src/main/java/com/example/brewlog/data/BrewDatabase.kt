@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [BrewLog::class], version = 6, exportSchema = false)
+@Database(entities = [BrewLog::class], version = 8, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class BrewDatabase : RoomDatabase() {
     abstract fun brewLogDao(): BrewLogDao
@@ -18,7 +18,7 @@ abstract class BrewDatabase : RoomDatabase() {
         fun getDatabase(context: Context): BrewDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, BrewDatabase::class.java, "brew_database")
-                    .fallbackToDestructiveMigration() // Useful during development
+                    .fallbackToDestructiveMigration(true)
                     .build()
                     .also { Instance = it }
             }

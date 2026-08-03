@@ -18,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,7 +31,6 @@ import com.example.brewlog.ui.AddBrewScreen
 import com.example.brewlog.ui.BrewViewModel
 import com.example.brewlog.ui.FilterBottomSheet
 import com.example.brewlog.ui.theme.BrewLogTheme
-
 import kotlinx.coroutines.launch
 
 /**
@@ -245,6 +243,7 @@ fun BrewLogItem(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Collapsed Header: Name, Roaster, Rating, Grams Info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -263,6 +262,7 @@ fun BrewLogItem(
                     Text(
                         text = buildString {
                             val settings = mutableListOf<String>()
+                            // Only show basket info if grams are > 0
                             if (log.singleGrams > 0) settings.add("Single: ${log.singleGrams}g")
                             if (log.doubleGrams > 0) settings.add("Double: ${log.doubleGrams}g")
                             append(settings.joinToString(", "))
@@ -289,12 +289,34 @@ fun BrewLogItem(
                 }
             }
 
+            // Expanded Content
             AnimatedVisibility(visible = isExpanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
                     
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                        InfoBit("Roast Level", log.roastLevel)
+                    // Roast Info
+                    if (log.roastLevel.isNotEmpty()) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                            InfoBit("Roast Level", log.roastLevel)
+                        }
+                    }
+
+                    // Conditional Blend Composition
+                    if (log.hasBlendSettings) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Blend Composition", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = buildString {
+                                val components = mutableListOf<String>()
+                                if (log.arabicaPercentage > 0) components.add("Arabica: ${log.arabicaPercentage}%")
+                                if (log.robustaPercentage > 0) components.add("Robusta: ${log.robustaPercentage}%")
+                                if (log.excelsaPercentage > 0) components.add("Excelsa: ${log.excelsaPercentage}%")
+                                if (log.libericaPercentage > 0) components.add("Liberica: ${log.libericaPercentage}%")
+                                append(components.joinToString(", "))
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
 
                     // Conditional Sensory Profile
@@ -365,39 +387,5 @@ fun SensoryBar(label: String, value: Int) {
             color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.outlineVariant
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    BrewLogTheme {
-        Scaffold(
-            topBar = { TopAppBar(title = { Text("Brew Settings") }) }
-        ) { padding ->
-            Column(Modifier.padding(padding).padding(16.dp)) {
-                BrewLogItem(
-                    log = BrewLog(
-                        id = 1,
-                        coffeeName = "Ethiopia Yirgacheffe",
-                        roaster = "Blue Bottle",
-                        grindSize = 12,
-                        roastLevel = "Light",
-                        hasRating = true,
-                        rating = 9,
-                        singleGrams = 9.0,
-                        doubleGrams = 18.0,
-                        hasFlavorTags = true,
-                        flavorTags = listOf("Floral", "Citrus", "Berry"),
-                        hasSensoryProfile = true
-                    ),
-                    isExpanded = true,
-                    onToggleExpand = {},
-                    onDelete = {},
-                    onEdit = {}
-                )
-            }
-        }
     }
 }

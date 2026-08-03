@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Data model for a Coffee Brew Log entry.
- * Stores coffee characteristics and independent settings for Single and Double baskets.
+ * Stores coffee characteristics, blend composition, and independent settings for Single and Double baskets.
  */
 @Entity(tableName = "brew_logs")
 @Serializable
@@ -30,15 +30,16 @@ data class BrewLog(
     val hasFlavorTags: Boolean = false,
     val flavorTags: List<String> = emptyList(),
     
+    // Blend Settings
+    val hasBlendSettings: Boolean = false,
+    val arabicaPercentage: Int = 0,
+    val robustaPercentage: Int = 0,
+    val excelsaPercentage: Int = 0,
+    val libericaPercentage: Int = 0,
+    
     // Independent Basket Settings
     val isSingleSelected: Boolean = false,
     val singleGrams: Double = 0.0,
     val isDoubleSelected: Boolean = false,
-    val doubleGrams: Double = 0.0,
-    
-    // Coffee Composition percentages
-    val arabicaPercentage: Int = 0,
-    val robustaPercentage: Int = 0,
-    val libericaPercentage: Int = 0,
-    val stenophyllaPercentage: Int = 0
+    val doubleGrams: Double = 0.0
 )
