@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,66 +26,71 @@ fun FilterBottomSheet(
     filterState: FilterState,
     onSortChange: (SortOption) -> Unit,
     onFilterChange: (FilterState) -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    onApply: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Sort & Filter", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            IconButton(onClick = onReset) {
-                Icon(Icons.Default.Refresh, contentDescription = "Reset Filters")
+            Text("Filters", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+            TextButton(onClick = onReset) {
+                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Reset All")
             }
         }
 
-        // Sorting
-        Column {
-            Text("Sort By", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Sorting Section
+        FilterSection(title = "Sort By") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = sortOption == SortOption.NAME,
                     onClick = { onSortChange(SortOption.NAME) },
-                    label = { Text("Name") }
+                    label = { Text("Name") },
+                    leadingIcon = if (sortOption == SortOption.NAME) { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
                 )
                 FilterChip(
                     selected = sortOption == SortOption.RATING,
                     onClick = { onSortChange(SortOption.RATING) },
-                    label = { Text("Rating") }
+                    label = { Text("Rating") },
+                    leadingIcon = if (sortOption == SortOption.RATING) { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
                 )
             }
         }
 
         // Rating Range
-        FilterRangeSlider(
-            label = "Rating",
-            value = filterState.ratingRange,
-            valueRange = 1f..10f,
-            steps = 8,
-            onValueChange = { onFilterChange(filterState.copy(ratingRange = it)) }
-        )
+        FilterSection(title = "Rating Range") {
+            FilterRangeSlider(
+                label = "Score",
+                value = filterState.ratingRange,
+                valueRange = 1f..10f,
+                steps = 8,
+                onValueChange = { onFilterChange(filterState.copy(ratingRange = it)) }
+            )
+        }
 
-        // Sensory Profile Ranges
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Sensory Profile", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            
-            FilterRangeSlider("Sweetness", filterState.sweetnessRange, 1f..5f, 3) { onFilterChange(filterState.copy(sweetnessRange = it)) }
-            FilterRangeSlider("Acidity", filterState.acidityRange, 1f..5f, 3) { onFilterChange(filterState.copy(acidityRange = it)) }
-            FilterRangeSlider("Body", filterState.bodyRange, 1f..5f, 3) { onFilterChange(filterState.copy(bodyRange = it)) }
-            FilterRangeSlider("Bitterness", filterState.bitternessRange, 1f..5f, 3) { onFilterChange(filterState.copy(bitternessRange = it)) }
+        // Sensory Profile
+        FilterSection(title = "Sensory Profile") {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                FilterRangeSlider("Sweetness", filterState.sweetnessRange, 1f..5f, 3) { onFilterChange(filterState.copy(sweetnessRange = it)) }
+                FilterRangeSlider("Acidity", filterState.acidityRange, 1f..5f, 3) { onFilterChange(filterState.copy(acidityRange = it)) }
+                FilterRangeSlider("Body", filterState.bodyRange, 1f..5f, 3) { onFilterChange(filterState.copy(bodyRange = it)) }
+                FilterRangeSlider("Bitterness", filterState.bitternessRange, 1f..5f, 3) { onFilterChange(filterState.copy(bitternessRange = it)) }
+            }
         }
 
         // Roast Level
-        Column {
-            Text("Roast Level", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            FlowRow(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterSection(title = "Roast Level") {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ROAST_OPTIONS.forEach { roast ->
                     FilterChip(
                         selected = filterState.selectedRoasts.contains(roast),
@@ -103,9 +109,8 @@ fun FilterBottomSheet(
         }
 
         // Flavor Tags
-        Column {
-            Text("Flavor Tags", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            FlowRow(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterSection(title = "Flavor Tags") {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FLAVOR_OPTIONS.forEach { tag ->
                     FilterChip(
                         selected = filterState.selectedFlavorTags.contains(tag),
@@ -123,7 +128,29 @@ fun FilterBottomSheet(
             }
         }
         
+        Button(
+            onClick = onApply,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Text("Apply Filters", fontWeight = FontWeight.Bold)
+        }
+        
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun FilterSection(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = title, 
+            style = MaterialTheme.typography.titleMedium, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        content()
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -136,15 +163,26 @@ fun FilterRangeSlider(
     onValueChange: (ClosedFloatingPointRange<Float>) -> Unit
 ) {
     Column {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
-            Text("${value.start.toInt()} - ${value.endInclusive.toInt()}", style = MaterialTheme.typography.labelSmall)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = MaterialTheme.shapes.extraSmall
+            ) {
+                Text(
+                    text = "${value.start.toInt()} - ${value.endInclusive.toInt()}", 
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         RangeSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
-            steps = steps
+            steps = steps,
+            modifier = Modifier.padding(top = 4.dp)
         )
     }
 }

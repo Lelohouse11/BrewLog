@@ -2,27 +2,26 @@ package com.example.brewlog.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.data.BrewLog
 
-private val FLAVOR_TAG_OPTIONS = listOf(
-    "Chocolate", "Nutty", "Fruity", "Floral", "Caramel", 
+val FLAVOR_TAG_OPTIONS = listOf(
+    "Chocolate", "Nutty", "Fruity", "Floral", "Caramel",
     "Berry", "Citrus", "Spices", "Earthy", "Smoke"
 )
 
@@ -52,10 +51,13 @@ fun AddBrewScreen(
     
     // Optional: Blend Settings
     var hasBlendSettings by remember { mutableStateOf(existingLog?.hasBlendSettings ?: false) }
-    var arabicaPercentage by remember { mutableStateOf(existingLog?.arabicaPercentage?.takeIf { it > 0 }?.toString() ?: "") }
-    var robustaPercentage by remember { mutableStateOf(existingLog?.robustaPercentage?.takeIf { it > 0 }?.toString() ?: "") }
-    var excelsaPercentage by remember { mutableStateOf(existingLog?.excelsaPercentage?.takeIf { it > 0 }?.toString() ?: "") }
-    var libericaPercentage by remember { mutableStateOf(existingLog?.libericaPercentage?.takeIf { it > 0 }?.toString() ?: "") }
+    var arabicaPercent by remember { mutableIntStateOf(existingLog?.arabicaPercentage ?: 0) }
+    var robustaPercent by remember { mutableIntStateOf(existingLog?.robustaPercentage ?: 0) }
+    var excelsaPercent by remember { mutableIntStateOf(existingLog?.excelsaPercentage ?: 0) }
+    var libericaPercent by remember { mutableIntStateOf(existingLog?.libericaPercentage ?: 0) }
+
+    val totalPercentage = arabicaPercent + robustaPercent + excelsaPercent + libericaPercent
+    val isBlendValid = !hasBlendSettings || totalPercentage == 100
 
     // Basket Grams (Direct Input)
     var singleGrams by remember { mutableStateOf(existingLog?.singleGrams?.takeIf { it > 0 }?.toString() ?: "") }
@@ -71,6 +73,9 @@ fun AddBrewScreen(
     // Optional: Flavor Tags
     var hasFlavorTags by remember { mutableStateOf(existingLog?.hasFlavorTags ?: false) }
     var selectedFlavorTags by remember { mutableStateOf(existingLog?.flavorTags?.toSet() ?: emptySet<String>()) }
+
+    // Custom Notes
+    var notes by remember { mutableStateOf(existingLog?.notes ?: "") }
 
     // Observation of AI Scan Results
     val scanResult by geminiViewModel.scanResult.collectAsState()
@@ -111,10 +116,10 @@ fun AddBrewScreen(
             // New Auto-fill for Blend Settings
             if (it.hasBlendSettings) {
                 hasBlendSettings = true
-                if (it.arabicaPercentage > 0) arabicaPercentage = it.arabicaPercentage.toString()
-                if (it.robustaPercentage > 0) robustaPercentage = it.robustaPercentage.toString()
-                if (it.excelsaPercentage > 0) excelsaPercentage = it.excelsaPercentage.toString()
-                if (it.libericaPercentage > 0) libericaPercentage = it.libericaPercentage.toString()
+                arabicaPercent = it.arabicaPercentage
+                robustaPercent = it.robustaPercentage
+                excelsaPercent = it.excelsaPercentage
+                libericaPercent = it.libericaPercentage
             }
 
             geminiViewModel.clearResult()
@@ -133,7 +138,7 @@ fun AddBrewScreen(
     
     val isNameMissing = coffeeName.isBlank()
     val isRoasterMissing = roaster.isBlank()
-    val isValid = !isNameMissing && !isRoasterMissing
+    val isValid = !isNameMissing && !isRoasterMissing && isBlendValid
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -149,7 +154,6 @@ fun AddBrewScreen(
             )
         },
         floatingActionButton = {
-            // Truly floating button at the bottom right
             ExtendedFloatingActionButton(
                 onClick = {
                     if (isValid) {
@@ -163,10 +167,10 @@ fun AddBrewScreen(
                                 hasRating = hasRating,
                                 rating = if (hasRating) rating.toInt() else 0,
                                 hasBlendSettings = hasBlendSettings,
-                                arabicaPercentage = if (hasBlendSettings) arabicaPercentage.toIntOrNull() ?: 0 else 0,
-                                robustaPercentage = if (hasBlendSettings) robustaPercentage.toIntOrNull() ?: 0 else 0,
-                                excelsaPercentage = if (hasBlendSettings) excelsaPercentage.toIntOrNull() ?: 0 else 0,
-                                libericaPercentage = if (hasBlendSettings) libericaPercentage.toIntOrNull() ?: 0 else 0,
+                                arabicaPercentage = if (hasBlendSettings) arabicaPercent else 0,
+                                robustaPercentage = if (hasBlendSettings) robustaPercent else 0,
+                                excelsaPercentage = if (hasBlendSettings) excelsaPercent else 0,
+                                libericaPercentage = if (hasBlendSettings) libericaPercent else 0,
                                 isSingleSelected = sGrams > 0,
                                 singleGrams = sGrams,
                                 isDoubleSelected = dGrams > 0,
@@ -177,7 +181,8 @@ fun AddBrewScreen(
                                 body = body.toInt(),
                                 bitterness = bitterness.toInt(),
                                 hasFlavorTags = hasFlavorTags,
-                                flavorTags = if (hasFlavorTags) selectedFlavorTags.toList() else emptyList()
+                                flavorTags = if (hasFlavorTags) selectedFlavorTags.toList() else emptyList(),
+                                notes = notes
                             )
                         )
                     } else {
@@ -198,13 +203,13 @@ fun AddBrewScreen(
                 .padding(horizontal = 16.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(Modifier.height(8.dp))
 
-            // Section 0: AI Label Scanner
+            // AI Scanner Section
             OutlinedButton(
-                onClick = { cameraLauncher.launch() },
+                onClick = { cameraLauncher.launch(null) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isScanning
             ) {
@@ -223,220 +228,282 @@ fun AddBrewScreen(
                 Text(text = scanError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
-            // Section 1: Coffee Basics
-            Text("Coffee Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            
-            OutlinedTextField(
-                value = coffeeName,
-                onValueChange = { 
-                    coffeeName = it 
-                    if (it.isNotBlank()) showErrors = false
-                },
-                label = { Text("Coffee Name *") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = showErrors && isNameMissing,
-                supportingText = {
-                    if (showErrors && isNameMissing) {
-                        Text("Name is required")
+            // --- SECTION 1: COFFEE IDENTITY ---
+            BrewSectionCard(title = "Coffee Identity", icon = Icons.Default.Coffee) {
+                OutlinedTextField(
+                    value = coffeeName,
+                    onValueChange = { 
+                        coffeeName = it 
+                        if (it.isNotBlank()) showErrors = false
+                    },
+                    label = { Text("Coffee Name *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = showErrors && isNameMissing,
+                    supportingText = {
+                        if (showErrors && isNameMissing) Text("Name is required")
+                    }
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = roaster,
+                    onValueChange = { 
+                        roaster = it 
+                        if (it.isNotBlank()) showErrors = false
+                    },
+                    label = { Text("Roaster / Company *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = showErrors && isRoasterMissing,
+                    supportingText = {
+                        if (showErrors && isRoasterMissing) Text("Roaster is required")
+                    }
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // Roast Level
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = hasRoastLevel, onCheckedChange = { hasRoastLevel = it })
+                        Text("Add Roast Level", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (hasRoastLevel) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
+                            listOf("Light", "Medium", "Dark").forEach { level ->
+                                FilterChip(
+                                    selected = roastLevel == level,
+                                    onClick = { roastLevel = level },
+                                    label = { Text(level) }
+                                )
+                            }
+                        }
                     }
                 }
-            )
 
-            OutlinedTextField(
-                value = roaster,
-                onValueChange = { 
-                    roaster = it 
-                    if (it.isNotBlank()) showErrors = false
-                },
-                label = { Text("Roaster / Company *") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = showErrors && isRoasterMissing,
-                supportingText = {
-                    if (showErrors && isRoasterMissing) {
-                        Text("Roaster is required")
+                Spacer(Modifier.height(8.dp))
+
+                // Blend Composition
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = hasBlendSettings, onCheckedChange = { hasBlendSettings = it })
+                        Text("Add Blend Composition (%)", style = MaterialTheme.typography.bodyMedium)
                     }
-                }
-            )
 
-            OutlinedTextField(
-                value = grindSize,
-                onValueChange = { grindSize = it },
-                label = { Text("Grind Size (Optional)") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
+                    if (hasBlendSettings) {
+                        Spacer(Modifier.height(8.dp))
+                        
+                        PercentageSlider(
+                            label = "Arabica", 
+                            value = arabicaPercent, 
+                            maxAllowed = 100 - (robustaPercent + excelsaPercent + libericaPercent)
+                        ) { arabicaPercent = it }
+                        
+                        PercentageSlider(
+                            label = "Robusta", 
+                            value = robustaPercent, 
+                            maxAllowed = 100 - (arabicaPercent + excelsaPercent + libericaPercent)
+                        ) { robustaPercent = it }
+                        
+                        PercentageSlider(
+                            label = "Excelsa", 
+                            value = excelsaPercent, 
+                            maxAllowed = 100 - (arabicaPercent + robustaPercent + libericaPercent)
+                        ) { excelsaPercent = it }
+                        
+                        PercentageSlider(
+                            label = "Liberica", 
+                            value = libericaPercent, 
+                            maxAllowed = 100 - (arabicaPercent + robustaPercent + excelsaPercent)
+                        ) { libericaPercent = it }
 
-            // Roast Level is now optional via checkbox
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = hasRoastLevel, onCheckedChange = { hasRoastLevel = it })
-                    Text("Add Roast Level", style = MaterialTheme.typography.bodyLarge)
-                }
-                if (hasRoastLevel) {
-                    Text("Roast Level: $roastLevel", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 12.dp, top = 4.dp)) {
-                        listOf("Light", "Medium", "Dark").forEach { level ->
-                            FilterChip(
-                                selected = roastLevel == level,
-                                onClick = { roastLevel = level },
-                                label = { Text(level) }
+                        Spacer(Modifier.height(8.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Total Percentage:", 
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "$totalPercentage%",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = if (totalPercentage == 100) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                        if (totalPercentage != 100) {
+                            Text(
+                                "Total must be exactly 100%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
                 }
             }
 
-            // Section 2: Optional Rating
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = hasRating, onCheckedChange = { hasRating = it })
-                    Text("Add Overall Rating", style = MaterialTheme.typography.bodyLarge)
-                }
-                if (hasRating) {
-                    Text("Rating: ${rating.toInt()}/10", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
-                    Slider(
-                        value = rating,
-                        onValueChange = { rating = it },
-                        valueRange = 1f..10f,
-                        steps = 8,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+            // --- SECTION 2: PREPARATION SETTINGS ---
+            BrewSectionCard(title = "Preparation Settings", icon = Icons.Default.Settings) {
+                OutlinedTextField(
+                    value = grindSize,
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() }) {
+                            grindSize = newValue
+                        }
+                    },
+                    label = { Text("Grind Size (Optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                Spacer(Modifier.height(16.dp))
+                Text("Basket Settings (Grams)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                Spacer(Modifier.height(8.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    OutlinedTextField(
+                        value = singleGrams,
+                        onValueChange = { singleGrams = it },
+                        label = { Text("Single") },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("0.0") },
+                        suffix = { Text("g") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                    OutlinedTextField(
+                        value = doubleGrams,
+                        onValueChange = { doubleGrams = it },
+                        label = { Text("Double") },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("0.0") },
+                        suffix = { Text("g") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                     )
                 }
             }
 
-            HorizontalDivider()
-
-            // Section 3: Optional Blend Settings
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = hasBlendSettings, onCheckedChange = { hasBlendSettings = it })
-                    Text("Add Blend Composition (%)", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                }
-
-                if (hasBlendSettings) {
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = arabicaPercentage,
-                            onValueChange = { arabicaPercentage = it },
-                            label = { Text("Arabica") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        OutlinedTextField(
-                            value = robustaPercentage,
-                            onValueChange = { robustaPercentage = it },
-                            label = { Text("Robusta") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
+            // --- SECTION 3: EVALUATION ---
+            BrewSectionCard(title = "Evaluation", icon = Icons.Default.Stars) {
+                // Rating
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = hasRating, onCheckedChange = { hasRating = it })
+                        Text("Add Overall Rating", style = MaterialTheme.typography.bodyMedium)
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                        OutlinedTextField(
-                            value = excelsaPercentage,
-                            onValueChange = { excelsaPercentage = it },
-                            label = { Text("Excelsa") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        OutlinedTextField(
-                            value = libericaPercentage,
-                            onValueChange = { libericaPercentage = it },
-                            label = { Text("Liberica") },
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    if (hasRating) {
+                        Text("Rating: ${rating.toInt()}/10", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
+                        Slider(
+                            value = rating,
+                            onValueChange = { rating = it },
+                            valueRange = 1f..10f,
+                            steps = 8,
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
                 }
-            }
 
-            HorizontalDivider()
+                Spacer(Modifier.height(8.dp))
 
-            // Section 4: Basket Settings
-            Text("Basket Settings (Grams)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(
-                    value = singleGrams,
-                    onValueChange = { singleGrams = it },
-                    label = { Text("Single") },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("0.0") },
-                    suffix = { Text("g") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
-                OutlinedTextField(
-                    value = doubleGrams,
-                    onValueChange = { doubleGrams = it },
-                    label = { Text("Double") },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("0.0") },
-                    suffix = { Text("g") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
-            }
-
-            HorizontalDivider()
-
-            // Section 5: Optional Sensory Profile
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = hasSensoryProfile, onCheckedChange = { hasSensoryProfile = it })
-                    Text("Add Sensory Profile", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                }
-                
-                if (hasSensoryProfile) {
-                    Spacer(Modifier.height(8.dp))
-                    SensorySlider("Sweetness", sweetness) { sweetness = it }
-                    SensorySlider("Acidity", acidity) { acidity = it }
-                    SensorySlider("Body", body) { body = it }
-                    SensorySlider("Bitterness", bitterness) { bitterness = it }
-                }
-            }
-
-            HorizontalDivider()
-
-            // Section 6: Optional Flavor Tags
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = hasFlavorTags, onCheckedChange = { hasFlavorTags = it })
-                    Text("Add Flavor Tags", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                // Sensory Profile
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = hasSensoryProfile, onCheckedChange = { hasSensoryProfile = it })
+                        Text("Add Sensory Profile", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    
+                    if (hasSensoryProfile) {
+                        Spacer(Modifier.height(8.dp))
+                        SensorySlider("Sweetness", sweetness) { sweetness = it }
+                        SensorySlider("Acidity", acidity) { acidity = it }
+                        SensorySlider("Body", body) { body = it }
+                        SensorySlider("Bitterness", bitterness) { bitterness = it }
+                    }
                 }
 
-                if (hasFlavorTags) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        FLAVOR_TAG_OPTIONS.forEach { tag ->
-                            FilterChip(
-                                selected = selectedFlavorTags.contains(tag),
-                                onClick = {
-                                    selectedFlavorTags = if (selectedFlavorTags.contains(tag)) {
-                                        selectedFlavorTags - tag
-                                    } else {
-                                        selectedFlavorTags + tag
-                                    }
-                                },
-                                label = { Text(tag) }
-                            )
+                Spacer(Modifier.height(8.dp))
+
+                // Flavor Tags
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = hasFlavorTags, onCheckedChange = { hasFlavorTags = it })
+                        Text("Add Flavor Tags", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    if (hasFlavorTags) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            FLAVOR_TAG_OPTIONS.forEach { tag ->
+                                FilterChip(
+                                    selected = selectedFlavorTags.contains(tag),
+                                    onClick = {
+                                        selectedFlavorTags = if (selectedFlavorTags.contains(tag)) {
+                                            selectedFlavorTags - tag
+                                        } else {
+                                            selectedFlavorTags + tag
+                                        }
+                                    },
+                                    label = { Text(tag) }
+                                )
+                            }
                         }
                     }
                 }
             }
+
+            // --- SECTION 4: ADDITIONAL INFO ---
+            BrewSectionCard(title = "Additional Info", icon = Icons.Default.EditNote) {
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes / Comments") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g. beans for espresso, roast date, etc.") },
+                    minLines = 3,
+                    maxLines = 5
+                )
+            }
             
-            // Add extra space at bottom so FAB doesn't cover content
             Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
 @Composable
+fun BrewSectionCard(
+    title: String,
+    icon: ImageVector,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
+            content()
+        }
+    }
+}
+
+@Composable
 fun SensorySlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
+            Text(label, style = MaterialTheme.typography.bodySmall)
             Text("${value.toInt()}/5", style = MaterialTheme.typography.labelSmall)
         }
         Slider(
@@ -445,5 +512,33 @@ fun SensorySlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
             valueRange = 1f..5f,
             steps = 3
         )
+    }
+}
+
+@Composable
+fun PercentageSlider(label: String, value: Int, maxAllowed: Int, onValueChange: (Int) -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.bodySmall)
+            Text("$value%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+        }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { 
+                val newValue = it.toInt()
+                if (newValue <= maxAllowed) {
+                    onValueChange(newValue)
+                }
+            },
+            valueRange = 0f..100f
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AddBrewScreenPreview() {
+    MaterialTheme {
+        AddBrewScreen(onSave = {}, onNavigateBack = {})
     }
 }

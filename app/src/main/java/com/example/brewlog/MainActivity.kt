@@ -4,22 +4,27 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -33,64 +38,48 @@ import com.example.brewlog.ui.FilterBottomSheet
 import com.example.brewlog.ui.theme.BrewLogTheme
 import kotlinx.coroutines.launch
 
-/**
- * Main entry point for the BrewLog application.
- * This activity handles navigation and the root UI container.
- */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Initialize the Splash Screen API for a smooth startup transition
-        installSplashScreen()
         super.onCreate(savedInstanceState)
-        
-        // Use Edge-to-Edge to allow content to draw behind system bars (Status/Navigation)
         enableEdgeToEdge()
-        
         setContent {
             BrewLogTheme {
-                val viewModel: BrewViewModel = viewModel()
                 val navController = rememberNavController()
-
-                // Surface ensures a consistent theme-based background color behind all navigation transitions.
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    NavHost(navController = navController, startDestination = "home") {
-                        composable("home") {
-                            HomeScreen(
-                                viewModel = viewModel,
-                                onNavigateToAddBrew = { navController.navigate("add_brew") },
-                                onNavigateToEditBrew = { id -> navController.navigate("edit_brew/$id") }
-                            )
-                        }
-                        composable("add_brew") {
-                            AddBrewScreen(
-                                onSave = { log ->
-                                    viewModel.addLog(log)
-                                    navController.popBackStack()
-                                },
-                                onNavigateBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(
-                            route = "edit_brew/{logId}",
-                            arguments = listOf(navArgument("logId") { type = NavType.IntType })
-                        ) { backStackEntry ->
-                            val logId = backStackEntry.arguments?.getInt("logId")
-                            val logs by viewModel.allLogs.collectAsState()
-                            val log = logs.find { it.id == logId }
-                            if (log != null) {
-                                AddBrewScreen(
-                                    existingLog = log,
-                                    onSave = { updatedLog ->
-                                        viewModel.updateLog(updatedLog)
-                                        navController.popBackStack()
-                                    },
-                                    onNavigateBack = { navController.popBackStack() }
-                                )
-                            }
-                        }
+                val viewModel: BrewViewModel = viewModel()
+                
+                NavHost(navController = navController, startDestination = "home") {
+                    composable("home") {
+                        HomeScreen(
+                            viewModel = viewModel,
+                            onNavigateToAddBrew = { navController.navigate("add_brew") },
+                            onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") }
+                        )
+                    }
+                    composable("add_brew") {
+                        AddBrewScreen(
+                            onSave = { 
+                                viewModel.addLog(it)
+                                navController.popBackStack()
+                            },
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable(
+                        route = "edit_brew/{logId}",
+                        arguments = listOf(navArgument("logId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val logId = backStackEntry.arguments?.getInt("logId") ?: return@composable
+                        val logs by viewModel.allLogs.collectAsState()
+                        val logToEdit = logs.find { it.id == logId }
+                        
+                        AddBrewScreen(
+                            onSave = { 
+                                viewModel.updateLog(it)
+                                navController.popBackStack()
+                            },
+                            onNavigateBack = { navController.popBackStack() },
+                            existingLog = logToEdit
+                        )
                     }
                 }
             }
@@ -112,6 +101,9 @@ fun HomeScreen(
     
     var expandedLogId by remember { mutableStateOf<Int?>(null) }
     var showFilters by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var isSearchActive by remember { mutableStateOf(false) }
+
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -140,57 +132,122 @@ fun HomeScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text("Brew Settings") },
-                actions = {
-                    IconButton(onClick = { importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*")) }) {
-                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = "Import")
+            // Material 3 Search Bar handles its own spacing and status bars
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { viewModel.updateSearchQuery(it) },
+                onSearch = { isSearchActive = false },
+                active = isSearchActive,
+                onActiveChange = { isSearchActive = it },
+                placeholder = { Text("Search coffee or roaster...") },
+                leadingIcon = { 
+                    if (isSearchActive) {
+                        IconButton(onClick = { isSearchActive = false }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = null) 
                     }
-                    IconButton(onClick = { exportLauncher.launch("brew_settings.json") }) {
-                        Icon(imageVector = Icons.Default.FileUpload, contentDescription = "Export")
+                },
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                        if (!isSearchActive) {
+                            IconButton(onClick = { showFilters = true }) {
+                                Icon(Icons.Default.FilterList, contentDescription = "Filter")
+                            }
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Import JSON") },
+                                        leadingIcon = { Icon(Icons.Default.FileDownload, null) },
+                                        onClick = {
+                                            showMenu = false
+                                            importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Export JSON") },
+                                        leadingIcon = { Icon(Icons.Default.FileUpload, null) },
+                                        onClick = {
+                                            showMenu = false
+                                            exportLauncher.launch("brew_settings.json")
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
-                    IconButton(onClick = { showFilters = true }) {
-                        Icon(imageVector = Icons.Default.FilterList, contentDescription = "Filter")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
+                    .padding(top = if (isSearchActive) 0.dp else 8.dp)
+            ) {
+                // Results list when search is active
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(logs, key = { "search_${it.id}" }) { log ->
+                        BrewLogItem(
+                            log = log,
+                            isExpanded = false,
+                            onToggleExpand = {
+                                viewModel.updateSearchQuery(log.coffeeName)
+                                isSearchActive = false
+                            },
+                            onDelete = { viewModel.deleteLog(log) },
+                            onEdit = { onNavigateToEditBrew(log.id) }
+                        )
                     }
                 }
-            )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAddBrew) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Brew Setting")
+            LargeFloatingActionButton(
+                onClick = onNavigateToAddBrew,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Brew Setting", modifier = Modifier.size(30.dp))
             }
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            // Persistent Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search coffee or roaster...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium
-            )
-
             if (logs.isEmpty()) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text(if (searchQuery.isEmpty()) "No brew settings logged yet." else "No matching results.")
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.Coffee, 
+                            contentDescription = null, 
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outlineVariant
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            if (searchQuery.isEmpty()) "No brew settings logged yet." else "No matching results.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(16.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp)
                 ) {
                     items(logs, key = { it.id }) { log ->
                         BrewLogItem(
@@ -217,7 +274,12 @@ fun HomeScreen(
                     filterState = filterState,
                     onSortChange = { viewModel.updateSort(it) },
                     onFilterChange = { viewModel.updateFilter(it) },
-                    onReset = { viewModel.resetFilters() }
+                    onReset = { viewModel.resetFilters() },
+                    onApply = { 
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            showFilters = false
+                        }
+                    }
                 )
             }
         }
@@ -233,57 +295,94 @@ fun BrewLogItem(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
+    val rotation by animateFloatAsState(if (isExpanded) 180f else 0f, label = "rotation")
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggleExpand() },
+        shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isExpanded) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Collapsed Header: Name, Roaster, Rating, Grams Info
+            // Collapsed Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = log.coffeeName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = log.coffeeName, 
+                        style = MaterialTheme.typography.titleLarge, 
+                        fontWeight = FontWeight.ExtraBold,
+                        lineHeight = 24.sp
+                    )
                     if (log.roaster.isNotEmpty()) {
                         Text(
                             text = log.roaster,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    Text(
-                        text = buildString {
-                            val settings = mutableListOf<String>()
-                            // Only show basket info if grams are > 0
-                            if (log.singleGrams > 0) settings.add("Single: ${log.singleGrams}g")
-                            if (log.doubleGrams > 0) settings.add("Double: ${log.doubleGrams}g")
-                            append(settings.joinToString(", "))
-                            append(" | Grind: ${log.grindSize}")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    // Quick Stats Row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        QuickStat(Icons.Default.Settings, log.grindSize.toString())
+                        if (log.singleGrams > 0 || log.doubleGrams > 0) {
+                            val grams = if (log.doubleGrams > 0) log.doubleGrams else log.singleGrams
+                            QuickStat(Icons.Default.Scale, "${grams}g")
+                        }
+                        if (log.roastLevel.isNotEmpty()) {
+                            Surface(
+                                color = when(log.roastLevel) {
+                                    "Light" -> Color(0xFFF5E6D3)
+                                    "Dark" -> Color(0xFF4E342E)
+                                    else -> Color(0xFF8D6E63)
+                                },
+                                contentColor = if (log.roastLevel == "Dark") Color.White else Color.Black,
+                                shape = MaterialTheme.shapes.extraSmall
+                            ) {
+                                Text(
+                                    log.roastLevel, 
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 }
                 
-                // Only show rating bubble if it was entered
-                if (log.hasRating) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            text = "${log.rating}/10",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
+                Column(horizontalAlignment = Alignment.End) {
+                    if (log.hasRating) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(
+                                text = "${log.rating}/10",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    IconButton(onClick = onToggleExpand) {
+                        Icon(
+                            Icons.Default.ExpandMore, 
+                            contentDescription = null,
+                            modifier = Modifier.rotate(rotation)
                         )
                     }
                 }
@@ -293,18 +392,10 @@ fun BrewLogItem(
             AnimatedVisibility(visible = isExpanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
-                    
-                    // Roast Info
-                    if (log.roastLevel.isNotEmpty()) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                            InfoBit("Roast Level", log.roastLevel)
-                        }
-                    }
 
                     // Conditional Blend Composition
                     if (log.hasBlendSettings) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Blend Composition", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Blend Composition", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         Text(
                             text = buildString {
                                 val components = mutableListOf<String>()
@@ -314,29 +405,30 @@ fun BrewLogItem(
                                 if (log.libericaPercentage > 0) components.add("Liberica: ${log.libericaPercentage}%")
                                 append(components.joinToString(", "))
                             },
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 4.dp)
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Conditional Sensory Profile
                     if (log.hasSensoryProfile) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Sensory Profile", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Sensory Profile", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(8.dp))
                         SensoryBar("Sweetness", log.sweetness)
                         SensoryBar("Acidity", log.acidity)
                         SensoryBar("Body", log.body)
                         SensoryBar("Bitterness", log.bitterness)
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Conditional Flavor Tags
                     if (log.hasFlavorTags && log.flavorTags.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Flavor Tags", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Flavor Tags", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         FlowRow(
-                            modifier = Modifier.padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             log.flavorTags.forEach { tag ->
                                 SuggestionChip(
@@ -345,18 +437,48 @@ fun BrewLogItem(
                                 )
                             }
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // Notes
+                    if (log.notes.isNotEmpty()) {
+                        Text("Notes", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = MaterialTheme.shapes.small,
+                            tonalElevation = 1.dp
+                        ) {
+                            Text(
+                                text = log.notes,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                     }
 
                     // Actions
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.End
+                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = onEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        TextButton(
+                            onClick = onDelete,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Delete")
                         }
-                        IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = onEdit,
+                            contentPadding = PaddingValues(horizontal = 24.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Edit")
                         }
                     }
                 }
@@ -366,26 +488,37 @@ fun BrewLogItem(
 }
 
 @Composable
-fun InfoBit(label: String, value: String) {
-    Column {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+fun QuickStat(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.outline)
+        Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 fun SensoryBar(label: String, value: Int) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.labelSmall)
+        Text(
+            text = label, 
+            modifier = Modifier.width(90.dp), 
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium
+        )
         LinearProgressIndicator(
             progress = { value / 5f },
-            modifier = Modifier.weight(1f).height(6.dp),
+            modifier = Modifier.weight(1f).height(8.dp),
             strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
             color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+        Text(
+            text = "$value/5",
+            modifier = Modifier.padding(start = 8.dp), 
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline
         )
     }
 }

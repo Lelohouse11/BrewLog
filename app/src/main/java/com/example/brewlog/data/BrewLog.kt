@@ -41,5 +41,7 @@ data class BrewLog(
     val isSingleSelected: Boolean = false,
     val singleGrams: Double = 0.0,
     val isDoubleSelected: Boolean = false,
-    val doubleGrams: Double = 0.0
+    val doubleGrams: Double = 0.0,
+    
+    val notes: String = ""
 )
