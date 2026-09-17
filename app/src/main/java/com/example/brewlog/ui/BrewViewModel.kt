@@ -6,6 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.brewlog.data.BrewDatabase
 import com.example.brewlog.data.BrewLog
+import com.example.brewlog.data.EspressoMachine
+import com.example.brewlog.data.ShotLog
+import com.example.brewlog.data.ShotLogWithBean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 enum class SortOption { NAME, RATING }
@@ -38,6 +40,10 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
     val searchQuery = MutableStateFlow("")
 
     private val _allLogs = brewLogDao.getAllLogs()
+    private val _allShotLogs = brewLogDao.getAllShotLogsWithBean()
+
+    val espressoMachine = brewLogDao.getEspressoMachine()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val filteredLogs: StateFlow<List<BrewLog>> = combine(
         _allLogs, sortOption, filterState, searchQuery
@@ -100,6 +106,13 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = emptyList()
         )
 
+    val allShotLogs: StateFlow<List<ShotLogWithBean>> = _allShotLogs
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     fun addLog(log: BrewLog) {
         viewModelScope.launch {
             brewLogDao.insertLog(log)
@@ -118,6 +131,58 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun addShotLog(shotLog: ShotLog, updateBean: Boolean = false) {
+        viewModelScope.launch {
+            brewLogDao.insertShotLog(shotLog)
+            if (updateBean) {
+                updateBeanSettings(
+                    beanId = shotLog.beanId,
+                    grindSize = shotLog.grindSize,
+                    basketType = shotLog.basketType,
+                    dose = shotLog.doseIn.toDouble()
+                )
+            }
+        }
+    }
+
+    fun updateBeanFromRecommendation(
+        beanId: Int,
+        basketType: String,
+        recommendedGrind: Float,
+        recommendedDose: Double,
+        @Suppress("UNUSED_PARAMETER") recommendedYield: Double
+    ) {
+        viewModelScope.launch {
+            updateBeanSettings(
+                beanId = beanId,
+                grindSize = recommendedGrind,
+                basketType = basketType,
+                dose = recommendedDose
+            )
+        }
+    }
+
+    private suspend fun updateBeanSettings(
+        beanId: Int,
+        grindSize: Float,
+        basketType: String,
+        dose: Double
+    ) {
+        val bean = _allLogs.first().find { it.id == beanId }
+        bean?.let {
+            val updatedBean = it.copy(
+                grindSize = grindSize,
+                singleGrams = if (basketType == "single") dose else it.singleGrams,
+                doubleGrams = if (basketType == "double") dose else it.doubleGrams
+            )
+            brewLogDao.updateLog(updatedBean)
+        }
+    }
+
+    suspend fun getLatestBalancedShot(beanId: Int, basketType: String): ShotLog? {
+        return brewLogDao.getLatestBalancedShot(beanId, basketType)
+    }
+
     fun updateSort(option: SortOption) {
         sortOption.value = option
     }
@@ -132,6 +197,38 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateSearchQuery(query: String) {
         searchQuery.value = query
+    }
+
+    fun updateEspressoMachine(machine: EspressoMachine) {
+        viewModelScope.launch {
+            brewLogDao.insertEspressoMachine(machine)
+        }
+    }
+
+    fun deleteEspressoMachine() {
+        viewModelScope.launch {
+            brewLogDao.clearEspressoMachine()
+        }
+    }
+
+    fun saveMachinePhoto(uri: Uri) {
+        viewModelScope.launch {
+            val context = getApplication<Application>()
+            try {
+                // If it's a content URI, try to take persistable permission
+                if (uri.scheme == "content") {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("BrewViewModel", "Could not take persistable permission: ${e.message}")
+            }
+            
+            val current = espressoMachine.value ?: EspressoMachine()
+            brewLogDao.insertEspressoMachine(current.copy(photoUri = uri.toString()))
+        }
     }
 
     /**

@@ -1,8 +1,11 @@
 package com.example.brewlog.ui
 
+import com.example.brewlog.BuildConfig
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.util.Log
+import com.example.brewlog.data.MachineScanResult
 import com.example.brewlog.data.ScanResult
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
@@ -13,13 +16,12 @@ import kotlinx.serialization.json.Json
 
 class GeminiViewModel : ViewModel() {
 
-    // ⚠️ IMPORTANT: Replace this with your actual Gemini API Key from Google AI Studio.
-    // Obtain one for free at https://aistudio.google.com/
-    private val apiKey = "YOUR_GEMINI_API_KEY"
+    // The API Key is now retrieved from local.properties via secrets-gradle-plugin
+    private val apiKey = BuildConfig.GEMINI_API_KEY
 
     private val generativeModel = GenerativeModel(
         modelName = "gemini-3.1-flash-lite",
-        apiKey = apiKey
+        apiKey = apiKey,
     )
 
     private val json = Json { 
@@ -30,7 +32,10 @@ class GeminiViewModel : ViewModel() {
     private val _scanResult = MutableStateFlow<ScanResult?>(null)
     val scanResult = _scanResult.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
+    private val _machineScanResult = MutableStateFlow<MachineScanResult?>(null)
+    val machineScanResult = _machineScanResult.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(value = false)
     val isLoading = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -100,5 +105,62 @@ class GeminiViewModel : ViewModel() {
 
     fun clearResult() {
         _scanResult.value = null
+        _machineScanResult.value = null
+    }
+
+    fun fetchMachineInfo(brand: String, model: String) {
+        Log.d("GeminiViewModel", "Fetching info for $brand $model")
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _machineScanResult.value = null
+
+            try {
+                val prompt = """
+                    You are a coffee equipment expert. Analyze if the following espresso machine exists:
+                    Brand: $brand
+                    Model: $model
+
+                    If the machine is not real or the brand/model names are too short/vague (like "s" or "test"), set "machineFound" to false.
+
+                    If found, provide technical details in JSON:
+                    - "machineFound": true.
+                    - "portafilterDiameter": Number (e.g., 58.0, 54.0).
+                    - "hasIntegratedGrinder": Boolean.
+                    - "hasSteamWand": Boolean.
+                    - "waterFilterMaxDays": Manufacturer recommended max days (e.g. 90).
+                    - "descaleMaxDays": Manufacturer recommended max days (e.g. 180).
+                    - "backflushMaxDays": Manufacturer recommended max days (e.g. 30).
+                    - "waterFilterLimitCycles": Cycles limit (cups) if applicable, else 0.
+                    - "descaleLimitCycles": Cycles limit (cups) if applicable, else 0.
+                    - "backflushLimitCycles": Cycles limit (cups) if applicable, else 0.
+
+                    Return ONLY the JSON object.
+                """.trimIndent()
+
+                val inputContent = content {
+                    text(prompt)
+                }
+
+                val response = generativeModel.generateContent(inputContent)
+                val responseText = response.text?.trim() ?: throw Exception("Empty response from AI")
+                Log.d("GeminiViewModel", "AI Raw Response: $responseText")
+
+                val jsonContent = when {
+                    responseText.contains("```json") -> responseText.substringAfter("```json").substringBefore("```").trim()
+                    responseText.contains("```") -> responseText.substringAfter("```").substringBeforeLast("```").trim()
+                    else -> responseText
+                }
+
+                val result = json.decodeFromString<MachineScanResult>(jsonContent)
+                Log.d("GeminiViewModel", "Parsed Result: $result")
+                _machineScanResult.value = result
+            } catch (e: Exception) {
+                Log.e("GeminiViewModel", "Error fetching machine info", e)
+                _errorMessage.value = "Failed to fetch machine info: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 }

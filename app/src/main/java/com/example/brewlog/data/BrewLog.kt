@@ -14,7 +14,7 @@ data class BrewLog(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val coffeeName: String,
     val roaster: String = "",
-    val grindSize: Int,
+    val grindSize: Float,
     val roastLevel: String, // "Light", "Medium", "Dark"
     
     // Optional Sections

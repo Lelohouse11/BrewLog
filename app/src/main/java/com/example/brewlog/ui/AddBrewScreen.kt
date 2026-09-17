@@ -43,7 +43,7 @@ fun AddBrewScreen(
     var roastLevel by remember { mutableStateOf(existingLog?.roastLevel ?: "Medium") }
 
     // Validation State
-    var showErrors by remember { mutableStateOf(false) }
+    val showErrors = remember { mutableStateOf(false) }
 
     // Optional: Rating
     var hasRating by remember { mutableStateOf(existingLog?.hasRating ?: false) }
@@ -60,8 +60,8 @@ fun AddBrewScreen(
     val isBlendValid = !hasBlendSettings || totalPercentage == 100
 
     // Basket Grams (Direct Input)
-    var singleGrams by remember { mutableStateOf(existingLog?.singleGrams?.takeIf { it > 0 }?.toString() ?: "") }
-    var doubleGrams by remember { mutableStateOf(existingLog?.doubleGrams?.takeIf { it > 0 }?.toString() ?: "") }
+    var singleGrams by remember { mutableStateOf(existingLog?.singleGrams?.toString() ?: "9.0") }
+    var doubleGrams by remember { mutableStateOf(existingLog?.doubleGrams?.toString() ?: "18.0") }
     
     // Optional: Sensory Profile (1-5)
     var hasSensoryProfile by remember { mutableStateOf(existingLog?.hasSensoryProfile ?: false) }
@@ -87,11 +87,11 @@ fun AddBrewScreen(
         scanResult?.let {
             if (it.coffeeName.isNotEmpty()) {
                 coffeeName = it.coffeeName
-                showErrors = false
+                showErrors.value = false
             }
             if (it.roaster.isNotEmpty()) {
                 roaster = it.roaster
-                showErrors = false
+                showErrors.value = false
             }
             
             // Auto-fill Roast
@@ -154,7 +154,7 @@ fun AddBrewScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = {
                     if (isValid) {
                         onSave(
@@ -162,7 +162,7 @@ fun AddBrewScreen(
                                 id = existingLog?.id ?: 0,
                                 coffeeName = coffeeName,
                                 roaster = roaster,
-                                grindSize = grindSize.toIntOrNull() ?: 0,
+                                grindSize = grindSize.toFloatOrNull() ?: 0f,
                                 roastLevel = if (hasRoastLevel) roastLevel else "",
                                 hasRating = hasRating,
                                 rating = if (hasRating) rating.toInt() else 0,
@@ -171,9 +171,9 @@ fun AddBrewScreen(
                                 robustaPercentage = if (hasBlendSettings) robustaPercent else 0,
                                 excelsaPercentage = if (hasBlendSettings) excelsaPercent else 0,
                                 libericaPercentage = if (hasBlendSettings) libericaPercent else 0,
-                                isSingleSelected = sGrams > 0,
+                                isSingleSelected = true,
                                 singleGrams = sGrams,
-                                isDoubleSelected = dGrams > 0,
+                                isDoubleSelected = true,
                                 doubleGrams = dGrams,
                                 hasSensoryProfile = hasSensoryProfile,
                                 sweetness = sweetness.toInt(),
@@ -186,14 +186,14 @@ fun AddBrewScreen(
                             )
                         )
                     } else {
-                        showErrors = true
+                        showErrors.value = true
                     }
                 },
                 containerColor = if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.errorContainer,
-                contentColor = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onErrorContainer,
-                icon = { Icon(Icons.Default.Done, contentDescription = null) },
-                text = { Text(if (existingLog == null) "Save Setting" else "Update Setting") }
-            )
+                contentColor = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onErrorContainer
+            ) {
+                Icon(Icons.Default.Done, contentDescription = null)
+            }
         },
         floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
@@ -234,13 +234,13 @@ fun AddBrewScreen(
                     value = coffeeName,
                     onValueChange = { 
                         coffeeName = it 
-                        if (it.isNotBlank()) showErrors = false
+                        if (it.isNotBlank()) showErrors.value = false
                     },
                     label = { Text("Coffee Name *") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = showErrors && isNameMissing,
+                    isError = showErrors.value && isNameMissing,
                     supportingText = {
-                        if (showErrors && isNameMissing) Text("Name is required")
+                        if (showErrors.value && isNameMissing) Text("Name is required")
                     }
                 )
 
@@ -250,13 +250,13 @@ fun AddBrewScreen(
                     value = roaster,
                     onValueChange = { 
                         roaster = it 
-                        if (it.isNotBlank()) showErrors = false
+                        if (it.isNotBlank()) showErrors.value = false
                     },
                     label = { Text("Roaster / Company *") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = showErrors && isRoasterMissing,
+                    isError = showErrors.value && isRoasterMissing,
                     supportingText = {
-                        if (showErrors && isRoasterMissing) Text("Roaster is required")
+                        if (showErrors.value && isRoasterMissing) Text("Roaster is required")
                     }
                 )
 
@@ -352,13 +352,13 @@ fun AddBrewScreen(
                 OutlinedTextField(
                     value = grindSize,
                     onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() }) {
+                        if (newValue.isEmpty() || newValue.all { it.isDigit() || it == '.' }) {
                             grindSize = newValue
                         }
                     },
-                    label = { Text("Grind Size (Optional)") },
+                    label = { Text("Grind Size") },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -371,7 +371,7 @@ fun AddBrewScreen(
                         onValueChange = { singleGrams = it },
                         label = { Text("Single") },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("0.0") },
+                        placeholder = { Text("9.0") },
                         suffix = { Text("g") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                     )
@@ -380,7 +380,7 @@ fun AddBrewScreen(
                         onValueChange = { doubleGrams = it },
                         label = { Text("Double") },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("0.0") },
+                        placeholder = { Text("18.0") },
                         suffix = { Text("g") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                     )

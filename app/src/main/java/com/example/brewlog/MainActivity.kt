@@ -1,7 +1,7 @@
 package com.example.brewlog
 
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,57 +29,213 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.work.*
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.AddBrewScreen
 import com.example.brewlog.ui.BrewViewModel
+import com.example.brewlog.ui.DialInScreen
+import com.example.brewlog.ui.EditMachineScreen
+import com.example.brewlog.ui.EspressoMachineScreen
 import com.example.brewlog.ui.FilterBottomSheet
+import com.example.brewlog.ui.SettingsScreen
+import com.example.brewlog.ui.SettingsViewModel
+import com.example.brewlog.ui.ShotHistoryScreen
 import com.example.brewlog.ui.theme.BrewLogTheme
+import com.example.brewlog.util.NotificationHelper
+import com.example.brewlog.worker.MaintenanceReminderWorker
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+    private fun scheduleMaintenanceCheck() {
+        val workRequest = PeriodicWorkRequestBuilder<MaintenanceReminderWorker>(24, TimeUnit.HOURS)
+            .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.HOURS)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "MaintenanceCheck",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        NotificationHelper.createNotificationChannel(this)
+        scheduleMaintenanceCheck()
+
         setContent {
-            BrewLogTheme {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val themeMode by settingsViewModel.themeMode.collectAsState()
+
+            BrewLogTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
                 val viewModel: BrewViewModel = viewModel()
-                
-                NavHost(navController = navController, startDestination = "home") {
-                    composable("home") {
-                        HomeScreen(
-                            viewModel = viewModel,
-                            onNavigateToAddBrew = { navController.navigate("add_brew") },
-                            onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") }
-                        )
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = currentBackStackEntry?.destination?.route
+
+                Scaffold(
+                    bottomBar = {
+                        if (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history") {
+                            NavigationBar {
+                                NavigationBarItem(
+                                    selected = currentDestination == "home",
+                                    onClick = { 
+                                        if (currentDestination != "home") {
+                                            navController.navigate("home") {
+                                                popUpTo("home") { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.Coffee, contentDescription = null) },
+                                    label = { Text("Brews") }
+                                )
+                                NavigationBarItem(
+                                    selected = currentDestination == "dial_in",
+                                    onClick = {
+                                        if (currentDestination != "dial_in") {
+                                            navController.navigate("dial_in") {
+                                                popUpTo("home") { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.Timer, contentDescription = null) },
+                                    label = { Text("Dial-In") }
+                                )
+                                NavigationBarItem(
+                                    selected = currentDestination == "shot_history",
+                                    onClick = {
+                                        if (currentDestination != "shot_history") {
+                                            navController.navigate("shot_history") {
+                                                popUpTo("home") { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.History, contentDescription = null) },
+                                    label = { Text("History") }
+                                )
+                                NavigationBarItem(
+                                    selected = currentDestination == "espresso_machine",
+                                    onClick = {
+                                        if (currentDestination != "espresso_machine") {
+                                            navController.navigate("espresso_machine") {
+                                                popUpTo("home") { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                                    label = { Text("Machine") }
+                                )
+                            }
+                        }
                     }
-                    composable("add_brew") {
-                        AddBrewScreen(
-                            onSave = { 
-                                viewModel.addLog(it)
-                                navController.popBackStack()
-                            },
-                            onNavigateBack = { navController.popBackStack() }
-                        )
-                    }
-                    composable(
-                        route = "edit_brew/{logId}",
-                        arguments = listOf(navArgument("logId") { type = NavType.IntType })
-                    ) { backStackEntry ->
-                        val logId = backStackEntry.arguments?.getInt("logId") ?: return@composable
-                        val logs by viewModel.allLogs.collectAsState()
-                        val logToEdit = logs.find { it.id == logId }
-                        
-                        AddBrewScreen(
-                            onSave = { 
-                                viewModel.updateLog(it)
-                                navController.popBackStack()
-                            },
-                            onNavigateBack = { navController.popBackStack() },
-                            existingLog = logToEdit
-                        )
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController, 
+                        startDestination = "home",
+                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                    ) {
+                        composable("home") {
+                            HomeScreen(
+                                viewModel = viewModel,
+                                onNavigateToAddBrew = { navController.navigate("add_brew") },
+                                onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") },
+                                onNavigateToSettings = { navController.navigate("settings") }
+                            )
+                        }
+                        composable("espresso_machine") {
+                            EspressoMachineScreen(
+                                viewModel = viewModel,
+                                onNavigateToEdit = { navController.navigate("edit_machine") },
+                                onNavigateToSettings = { navController.navigate("settings") }
+                            )
+                        }
+                        composable("edit_machine") {
+                            EditMachineScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("settings") {
+                            SettingsScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                viewModel = settingsViewModel
+                            )
+                        }
+                        composable("dial_in") {
+                            DialInScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onNavigateToSettings = { navController.navigate("settings") }
+                            )
+                        }
+                        composable(
+                            route = "dial_in/{beanId}/{basketType}/{dose}/{grind}",
+                            arguments = listOf(
+                                navArgument("beanId") { type = NavType.IntType },
+                                navArgument("basketType") { type = NavType.StringType },
+                                navArgument("dose") { type = NavType.FloatType },
+                                navArgument("grind") { type = NavType.FloatType }
+                            )
+                        ) { backStackEntry ->
+                            DialInScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onNavigateToSettings = { navController.navigate("settings") },
+                                initialBeanId = backStackEntry.arguments?.getInt("beanId"),
+                                initialBasketType = backStackEntry.arguments?.getString("basketType"),
+                                initialDose = backStackEntry.arguments?.getFloat("dose")?.toDouble(),
+                                initialGrindSize = backStackEntry.arguments?.getFloat("grind")
+                            )
+                        }
+                        composable("shot_history") {
+                            ShotHistoryScreen(
+                                viewModel = viewModel,
+                                onNavigateToDialIn = { beanId, basketType, dose, grind ->
+                                    navController.navigate("dial_in/$beanId/$basketType/${dose.toFloat()}/${grind}")
+                                },
+                                onNavigateToSettings = { navController.navigate("settings") },
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("add_brew") {
+                            AddBrewScreen(
+                                onSave = { 
+                                    viewModel.addLog(it)
+                                    navController.popBackStack()
+                                },
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable(
+                            route = "edit_brew/{logId}",
+                            arguments = listOf(navArgument("logId") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val logId = backStackEntry.arguments?.getInt("logId") ?: return@composable
+                            val logs by viewModel.allLogs.collectAsState()
+                            val logToEdit = logs.find { it.id == logId }
+                            
+                            AddBrewScreen(
+                                onSave = { 
+                                    viewModel.updateLog(it)
+                                    navController.popBackStack()
+                                },
+                                onNavigateBack = { navController.popBackStack() },
+                                existingLog = logToEdit
+                            )
+                        }
                     }
                 }
             }
@@ -92,7 +248,8 @@ class MainActivity : ComponentActivity() {
 fun HomeScreen(
     viewModel: BrewViewModel,
     onNavigateToAddBrew: () -> Unit,
-    onNavigateToEditBrew: (Int) -> Unit
+    onNavigateToEditBrew: (Int) -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
@@ -100,8 +257,8 @@ fun HomeScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     
     var expandedLogId by remember { mutableStateOf<Int?>(null) }
-    var showFilters by remember { mutableStateOf(false) }
-    var showMenu by remember { mutableStateOf(false) }
+    val showFilters = remember { mutableStateOf(false) }
+    val showMenu = remember { mutableStateOf(false) }
     var isSearchActive by remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState()
@@ -132,96 +289,106 @@ fun HomeScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            // Material 3 Search Bar handles its own spacing and status bars
-            SearchBar(
-                query = searchQuery,
-                onQueryChange = { viewModel.updateSearchQuery(it) },
-                onSearch = { isSearchActive = false },
-                active = isSearchActive,
-                onActiveChange = { isSearchActive = it },
-                placeholder = { Text("Search coffee or roaster...") },
-                leadingIcon = { 
-                    if (isSearchActive) {
-                        IconButton(onClick = { isSearchActive = false }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null) 
-                    }
-                },
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
-                            }
-                        }
-                        if (!isSearchActive) {
-                            IconButton(onClick = { showFilters = true }) {
-                                Icon(Icons.Default.FilterList, contentDescription = "Filter")
-                            }
-                            Box {
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+            Column {
+                // Material 3 Search Bar handles its own spacing and status bars
+                SearchBar(
+                    expanded = isSearchActive,
+                    onExpandedChange = { isSearchActive = it },
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = searchQuery,
+                            onQueryChange = { viewModel.updateSearchQuery(it) },
+                            onSearch = { isSearchActive = false },
+                            expanded = isSearchActive,
+                            onExpandedChange = { isSearchActive = it },
+                            placeholder = { Text("Search coffee or roaster...") },
+                            leadingIcon = {
+                                if (isSearchActive) {
+                                    IconButton(onClick = { isSearchActive = false }) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                    }
+                                } else {
+                                    Icon(Icons.Default.Search, contentDescription = null)
                                 }
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Import JSON") },
-                                        leadingIcon = { Icon(Icons.Default.FileDownload, null) },
-                                        onClick = {
-                                            showMenu = false
-                                            importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Export JSON") },
-                                        leadingIcon = { Icon(Icons.Default.FileUpload, null) },
-                                        onClick = {
-                                            showMenu = false
-                                            exportLauncher.launch("brew_settings.json")
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
-                    .padding(top = if (isSearchActive) 0.dp else 8.dp)
-            ) {
-                // Results list when search is active
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(logs, key = { "search_${it.id}" }) { log ->
-                        BrewLogItem(
-                            log = log,
-                            isExpanded = false,
-                            onToggleExpand = {
-                                viewModel.updateSearchQuery(log.coffeeName)
-                                isSearchActive = false
                             },
-                            onDelete = { viewModel.deleteLog(log) },
-                            onEdit = { onNavigateToEditBrew(log.id) }
+                            trailingIcon = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                        }
+                                    }
+                                    if (!isSearchActive) {
+                                        IconButton(onClick = { showFilters.value = true }) {
+                                            Icon(Icons.Default.FilterList, contentDescription = "Filter")
+                                        }
+                                        IconButton(onClick = onNavigateToSettings) {
+                                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                                        }
+                                        Box {
+                                            IconButton(onClick = { showMenu.value = true }) {
+                                                Icon(Icons.Default.MoreVert, contentDescription = "More")
+                                            }
+                                            DropdownMenu(
+                                                expanded = showMenu.value,
+                                                onDismissRequest = { showMenu.value = false }
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Import JSON") },
+                                                    leadingIcon = { Icon(Icons.Default.FileDownload, null) },
+                                                    onClick = {
+                                                        showMenu.value = false
+                                                        importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Export JSON") },
+                                                    leadingIcon = { Icon(Icons.Default.FileUpload, null) },
+                                                    onClick = {
+                                                        showMenu.value = false
+                                                        exportLauncher.launch("brew_settings.json")
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
+                ) {
+                    // Results list when search is active
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(logs, key = { "search_${it.id}" }) { log ->
+                            BrewLogItem(
+                                log = log,
+                                isExpanded = false,
+                                onToggleExpand = {
+                                    viewModel.updateSearchQuery(log.coffeeName)
+                                    isSearchActive = false
+                                },
+                                onDelete = { viewModel.deleteLog(log) },
+                                onEdit = { onNavigateToEditBrew(log.id) }
+                            )
+                        }
                     }
                 }
             }
         },
         floatingActionButton = {
-            LargeFloatingActionButton(
+            FloatingActionButton(
                 onClick = onNavigateToAddBrew,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Brew Setting", modifier = Modifier.size(30.dp))
+                Icon(Icons.Default.Add, contentDescription = "Add Brew Setting")
             }
         }
     ) { innerPadding ->
@@ -264,9 +431,9 @@ fun HomeScreen(
             }
         }
 
-        if (showFilters) {
+        if (showFilters.value) {
             ModalBottomSheet(
-                onDismissRequest = { showFilters = false },
+                onDismissRequest = { showFilters.value = false },
                 sheetState = sheetState
             ) {
                 FilterBottomSheet(
@@ -277,7 +444,7 @@ fun HomeScreen(
                     onReset = { viewModel.resetFilters() },
                     onApply = { 
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            showFilters = false
+                            showFilters.value = false
                         }
                     }
                 )

@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [BrewLog::class], version = 9, exportSchema = false)
+@Database(entities = [BrewLog::class, EspressoMachine::class, ShotLog::class], version = 11, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class BrewDatabase : RoomDatabase() {
     abstract fun brewLogDao(): BrewLogDao
