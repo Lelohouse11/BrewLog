@@ -1,6 +1,7 @@
 package com.example.brewlog.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -21,6 +22,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -601,58 +604,109 @@ private fun ShotStep(
         }
     }
 
-    // Timer Card
+    val haptic = LocalHapticFeedback.current
+
+    // Timer Card with Gauge
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val seconds = timeElapsed / 1000f
-            Text(
-                text = "%.1f s".format(seconds),
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 68.sp),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+            val targetMaxSec = target?.timeSecRange?.endInclusive ?: 30f
+            val progressProgress = (seconds / targetMaxSec).coerceIn(0f, 1f)
+            val animatedProgress by animateFloatAsState(targetValue = progressProgress, label = "timerProgress")
 
-            target?.let { t ->
-                val timeSec = timeElapsed / 1000f
-                val statusText = when {
-                    timeSec == 0f -> "${stringResource(R.string.target_time)}: ${t.timeSecRange.start.toInt()}-${t.timeSecRange.endInclusive.toInt()} s"
-                    timeSec in t.timeSecRange -> stringResource(R.string.target_range_ok)
-                    timeSec < t.timeSecRange.start -> stringResource(R.string.target_range_fast)
-                    else -> stringResource(R.string.target_range_slow)
-                }
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (timeSec in t.timeSecRange) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(bottom = 12.dp)
+            val targetOk = target != null && seconds in target.timeSecRange
+            val targetOver = target != null && seconds > target.timeSecRange.endInclusive
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(180.dp)
+                    .padding(8.dp)
+            ) {
+                CircularProgressIndicator(
+                    progress = { if (timeElapsed > 0) animatedProgress else 0f },
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 10.dp,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    color = when {
+                        targetOk -> MaterialTheme.colorScheme.primary
+                        targetOver -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.secondary
+                    }
                 )
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "%.1f".format(seconds),
+                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 44.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "sek",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
+
+            target?.let { t ->
+                val statusText = when {
+                    seconds == 0f -> "${stringResource(R.string.target_time)}: ${t.timeSecRange.start.toInt()}-${t.timeSecRange.endInclusive.toInt()} s"
+                    seconds in t.timeSecRange -> stringResource(R.string.target_range_ok)
+                    seconds < t.timeSecRange.start -> stringResource(R.string.target_range_fast)
+                    else -> stringResource(R.string.target_range_slow)
+                }
+                Surface(
+                    color = if (targetOk) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (targetOk) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = onToggleTimer,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onToggleTimer()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             ) {
-                Icon(if (isRunning) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(28.dp))
+                Icon(if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(26.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (isRunning) stringResource(R.string.timer_stop) else stringResource(R.string.timer_start), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(if (isRunning) stringResource(R.string.timer_stop) else stringResource(R.string.timer_start), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             if (!isRunning && timeElapsed > 0) {
                 Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onResetTimer) {
+                TextButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onResetTimer()
+                    }
+                ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(stringResource(R.string.reset_timer))

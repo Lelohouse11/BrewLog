@@ -194,6 +194,8 @@ fun ShotLogCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RatioTag(doseIn = shot.doseIn, yieldOut = shot.yieldOut)
+
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.extraSmall
@@ -239,24 +241,11 @@ fun ShotLogCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val isBalanced = shot.acidityEval == 0 && shot.bitternessEval == 0 && shot.bodyEval == 0
-
-                    if (isBalanced) {
-                        EvaluationBadge(stringResource(R.string.balanced), MaterialTheme.colorScheme.primary)
-                    } else {
-                        if (shot.acidityEval != 0) {
-                            val label = if (shot.acidityEval == -1) stringResource(R.string.too_sour) else stringResource(R.string.flat)
-                            EvaluationBadge(label, MaterialTheme.colorScheme.tertiary)
-                        }
-                        if (shot.bitternessEval != 0) {
-                            val label = if (shot.bitternessEval == -1) stringResource(R.string.under_extracted) else stringResource(R.string.bitter)
-                            EvaluationBadge(label, MaterialTheme.colorScheme.error)
-                        }
-                        if (shot.bodyEval != 0) {
-                            val label = if (shot.bodyEval == -1) stringResource(R.string.thin) else stringResource(R.string.heavy)
-                            EvaluationBadge(label, MaterialTheme.colorScheme.secondary)
-                        }
-                    }
+                    TasteDiagnosisBadge(
+                        acidityEval = shot.acidityEval,
+                        bitternessEval = shot.bitternessEval,
+                        bodyEval = shot.bodyEval
+                    )
                 }
             }
 
@@ -431,18 +420,85 @@ fun MetricItem(icon: ImageVector, text: String) {
 }
 
 @Composable
-fun EvaluationBadge(text: String, color: Color) {
+fun RatioTag(doseIn: Float, yieldOut: Float, modifier: Modifier = Modifier) {
+    val ratio = if (doseIn > 0f) yieldOut / doseIn else 0f
     Surface(
-        color = color.copy(alpha = 0.1f),
-        contentColor = color,
-        shape = MaterialTheme.shapes.small,
-        border = BorderStroke(0.5.dp, color.copy(alpha = 0.5f))
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
+            text = "1 : ${"%.1f".format(ratio)}",
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold
         )
     }
 }
+
+@Composable
+fun TasteDiagnosisBadge(
+    acidityEval: Int,
+    bitternessEval: Int,
+    bodyEval: Int,
+    modifier: Modifier = Modifier
+) {
+    val isBalanced = acidityEval == 0 && bitternessEval == 0 && bodyEval == 0
+
+    val badgeConfig = when {
+        isBalanced -> BadgeConfig(
+            Color(0xFFE8F5E9),
+            Color(0xFF2E7D32),
+            stringResource(R.string.balanced),
+            Icons.Default.CheckCircle
+        )
+        acidityEval == -1 -> BadgeConfig(
+            Color(0xFFFFF8E1),
+            Color(0xFFE65100),
+            stringResource(R.string.too_sour),
+            Icons.Default.WaterDrop
+        )
+        bitternessEval == 1 -> BadgeConfig(
+            Color(0xFFFFEBEE),
+            Color(0xFFC62828),
+            stringResource(R.string.bitter),
+            Icons.Default.Warning
+        )
+        else -> BadgeConfig(
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.colorScheme.onSurfaceVariant,
+            if (acidityEval == 1) stringResource(R.string.flat) else stringResource(R.string.under_extracted),
+            Icons.Default.Tune
+        )
+    }
+
+    Surface(
+        modifier = modifier,
+        color = badgeConfig.bgColor,
+        contentColor = badgeConfig.textColor,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(0.5.dp, badgeConfig.textColor.copy(alpha = 0.4f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(imageVector = badgeConfig.icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = badgeConfig.textColor)
+            Text(
+                text = badgeConfig.label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+private data class BadgeConfig(
+    val bgColor: Color,
+    val textColor: Color,
+    val label: String,
+    val icon: ImageVector
+)
+

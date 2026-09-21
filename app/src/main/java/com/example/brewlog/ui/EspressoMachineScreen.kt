@@ -1,7 +1,10 @@
 package com.example.brewlog.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -341,35 +344,86 @@ fun MaintenanceProgressBar(
     onMarkDone: () -> Unit
 ) {
     val daysSinceLast = if (lastDone != null) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastDone).toInt() else 0
-    
+
     val consumptionIntervalDays = if (weeklyConsumption > 0 && limitCycles > 0) {
         (limitCycles / (weeklyConsumption / 7.0)).toInt()
     } else {
         Int.MAX_VALUE
     }
-    
+
     val actualIntervalDays = minOf(maxDays, consumptionIntervalDays)
     val remainingDays = actualIntervalDays - daysSinceLast
-    val progress = (remainingDays.coerceIn(0, actualIntervalDays).toFloat() / actualIntervalDays)
+    val rawProgress = (remainingDays.coerceIn(0, actualIntervalDays).toFloat() / actualIntervalDays)
+    val animatedProgress by animateFloatAsState(targetValue = rawProgress, label = "maintenanceProgress")
 
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
-            IconButton(onClick = onMarkDone) {
-                Icon(Icons.Default.CheckCircle, stringResource(R.string.mark_completed), tint = MaterialTheme.colorScheme.primary)
+    val (statusColor, statusBg, statusLabel) = when {
+        remainingDays <= 0 -> Triple(
+            Color(0xFFC62828),
+            Color(0xFFFFEBEE),
+            if (remainingDays < 0) stringResource(R.string.overdue_by_days, -remainingDays) else "Heute fällig"
+        )
+        rawProgress <= 0.3f -> Triple(
+            Color(0xFFE65100),
+            Color(0xFFFFF8E1),
+            stringResource(R.string.days_remaining, remainingDays)
+        )
+        else -> Triple(
+            Color(0xFF2E7D32),
+            Color(0xFFE8F5E9),
+            stringResource(R.string.days_remaining, remainingDays)
+        )
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(0.5.dp, statusColor.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(2.dp))
+                    Surface(
+                        color = statusBg,
+                        contentColor = statusColor,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = statusLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = onMarkDone,
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = statusColor)
+                ) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.mark_completed), modifier = Modifier.size(28.dp))
+                }
             }
+
+            Spacer(Modifier.height(8.dp))
+
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(MaterialTheme.shapes.small),
+                color = statusColor,
+                trackColor = statusColor.copy(alpha = 0.15f)
+            )
         }
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth().height(12.dp).clip(MaterialTheme.shapes.small),
-            color = if (remainingDays < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-        Text(
-            text = if (remainingDays < 0) stringResource(R.string.overdue_by_days, -remainingDays) else stringResource(R.string.days_remaining, remainingDays),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (remainingDays < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
     }
 }

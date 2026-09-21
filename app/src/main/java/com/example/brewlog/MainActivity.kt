@@ -7,7 +7,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -148,7 +154,11 @@ class MainActivity : AppCompatActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = "home",
-                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                        enterTransition = { fadeIn(animationSpec = tween(220)) + slideInHorizontally { fullWidth -> fullWidth / 4 } },
+                        exitTransition = { fadeOut(animationSpec = tween(180)) + slideOutHorizontally { fullWidth -> -fullWidth / 4 } },
+                        popEnterTransition = { fadeIn(animationSpec = tween(220)) + slideInHorizontally { fullWidth -> -fullWidth / 4 } },
+                        popExitTransition = { fadeOut(animationSpec = tween(180)) + slideOutHorizontally { fullWidth -> fullWidth / 4 } }
                     ) {
                         composable("home") {
                             HomeScreen(
@@ -466,6 +476,7 @@ fun BrewLogItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .animateContentSize()
             .clickable { onToggleExpand() },
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
