@@ -21,7 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,7 +67,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         NotificationHelper.createNotificationChannel(this)
         scheduleMaintenanceCheck()
 
@@ -84,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                             NavigationBar {
                                 NavigationBarItem(
                                     selected = currentDestination == "home",
-                                    onClick = { 
+                                    onClick = {
                                         if (currentDestination != "home") {
                                             navController.navigate("home") {
                                                 popUpTo("home") { saveState = true }
@@ -94,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     },
                                     icon = { Icon(Icons.Default.Coffee, contentDescription = null) },
-                                    label = { Text("Brews") }
+                                    label = { Text(stringResource(R.string.my_brews)) }
                                 )
                                 NavigationBarItem(
                                     selected = currentDestination == "dial_in",
@@ -122,7 +125,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     },
                                     icon = { Icon(Icons.Default.History, contentDescription = null) },
-                                    label = { Text("History") }
+                                    label = { Text(stringResource(R.string.shot_history)) }
                                 )
                                 NavigationBarItem(
                                     selected = currentDestination == "espresso_machine",
@@ -136,14 +139,14 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     },
                                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                                    label = { Text("Machine") }
+                                    label = { Text(stringResource(R.string.espresso_machine)) }
                                 )
                             }
                         }
                     }
                 ) { innerPadding ->
                     NavHost(
-                        navController = navController, 
+                        navController = navController,
                         startDestination = "home",
                         modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
                     ) {
@@ -212,7 +215,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         composable("add_brew") {
                             AddBrewScreen(
-                                onSave = { 
+                                onSave = {
                                     viewModel.addLog(it)
                                     navController.popBackStack()
                                 },
@@ -226,9 +229,9 @@ class MainActivity : AppCompatActivity() {
                             val logId = backStackEntry.arguments?.getInt("logId") ?: return@composable
                             val logs by viewModel.allLogs.collectAsState()
                             val logToEdit = logs.find { it.id == logId }
-                            
+
                             AddBrewScreen(
-                                onSave = { 
+                                onSave = {
                                     viewModel.updateLog(it)
                                     navController.popBackStack()
                                 },
@@ -255,7 +258,7 @@ fun HomeScreen(
     val sortOption by viewModel.sortOption.collectAsState()
     val filterState by viewModel.filterState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    
+
     var expandedLogId by remember { mutableStateOf<Int?>(null) }
     val showFilters = remember { mutableStateOf(false) }
     val showMenu = remember { mutableStateOf(false) }
@@ -263,16 +266,14 @@ fun HomeScreen(
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
-    // File selection for Import
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { viewModel.importData(it) }
     }
 
-    // File creation for Export
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
@@ -290,7 +291,6 @@ fun HomeScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             Column {
-                // Material 3 Search Bar handles its own spacing and status bars
                 SearchBar(
                     expanded = isSearchActive,
                     onExpandedChange = { isSearchActive = it },
@@ -301,7 +301,7 @@ fun HomeScreen(
                             onSearch = { isSearchActive = false },
                             expanded = isSearchActive,
                             onExpandedChange = { isSearchActive = it },
-                            placeholder = { Text("Search coffee or roaster...") },
+                            placeholder = { Text(stringResource(R.string.search_placeholder)) },
                             leadingIcon = {
                                 if (isSearchActive) {
                                     IconButton(onClick = { isSearchActive = false }) {
@@ -360,7 +360,6 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
                 ) {
-                    // Results list when search is active
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
@@ -397,14 +396,14 @@ fun HomeScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            Icons.Default.Coffee, 
-                            contentDescription = null, 
+                            Icons.Default.Coffee,
+                            contentDescription = null,
                             modifier = Modifier.size(64.dp),
                             tint = MaterialTheme.colorScheme.outlineVariant
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            if (searchQuery.isEmpty()) "No brew settings logged yet." else "No matching results.",
+                            if (searchQuery.isEmpty()) stringResource(R.string.no_brews_found) else stringResource(R.string.no_brews_found),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.outline
                         )
@@ -442,7 +441,7 @@ fun HomeScreen(
                     onSortChange = { viewModel.updateSort(it) },
                     onFilterChange = { viewModel.updateFilter(it) },
                     onReset = { viewModel.resetFilters() },
-                    onApply = { 
+                    onApply = {
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             showFilters.value = false
                         }
@@ -483,8 +482,8 @@ fun BrewLogItem(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = log.coffeeName, 
-                        style = MaterialTheme.typography.titleLarge, 
+                        text = log.coffeeName,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         lineHeight = 24.sp
                     )
@@ -496,9 +495,9 @@ fun BrewLogItem(
                             fontWeight = FontWeight.Medium
                         )
                     }
-                    
+
                     Spacer(Modifier.height(8.dp))
-                    
+
                     // Quick Stats Row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -520,7 +519,7 @@ fun BrewLogItem(
                                 shape = MaterialTheme.shapes.extraSmall
                             ) {
                                 Text(
-                                    log.roastLevel, 
+                                    log.roastLevel,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold
@@ -529,7 +528,7 @@ fun BrewLogItem(
                         }
                     }
                 }
-                
+
                 Column(horizontalAlignment = Alignment.End) {
                     if (log.hasRating) {
                         Surface(
@@ -547,7 +546,7 @@ fun BrewLogItem(
                     }
                     IconButton(onClick = onToggleExpand) {
                         Icon(
-                            Icons.Default.ExpandMore, 
+                            Icons.Default.ExpandMore,
                             contentDescription = null,
                             modifier = Modifier.rotate(rotation)
                         )
@@ -580,18 +579,18 @@ fun BrewLogItem(
 
                     // Conditional Sensory Profile
                     if (log.hasSensoryProfile) {
-                        Text("Sensory Profile", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.sensory_profile), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(8.dp))
-                        SensoryBar("Sweetness", log.sweetness)
-                        SensoryBar("Acidity", log.acidity)
-                        SensoryBar("Body", log.body)
-                        SensoryBar("Bitterness", log.bitterness)
+                        SensoryBar(stringResource(R.string.sweetness), log.sweetness)
+                        SensoryBar(stringResource(R.string.acidity), log.acidity)
+                        SensoryBar(stringResource(R.string.body), log.body)
+                        SensoryBar(stringResource(R.string.bitterness), log.bitterness)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Conditional Flavor Tags
                     if (log.hasFlavorTags && log.flavorTags.isNotEmpty()) {
-                        Text("Flavor Tags", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.flavor_tags), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         FlowRow(
                             modifier = Modifier.padding(top = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -609,7 +608,7 @@ fun BrewLogItem(
 
                     // Notes
                     if (log.notes.isNotEmpty()) {
-                        Text("Notes", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.notes), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         Surface(
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                             color = MaterialTheme.colorScheme.surface,
@@ -636,7 +635,7 @@ fun BrewLogItem(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Delete")
+                            Text(stringResource(R.string.delete))
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -645,7 +644,7 @@ fun BrewLogItem(
                         ) {
                             Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Edit")
+                            Text(stringResource(R.string.edit))
                         }
                     }
                 }
@@ -669,21 +668,21 @@ fun SensoryBar(label: String, value: Int) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = label, 
-            modifier = Modifier.width(90.dp), 
+            text = label,
+            modifier = Modifier.width(90.dp),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium
         )
         LinearProgressIndicator(
             progress = { value / 5f },
             modifier = Modifier.weight(1f).height(8.dp),
-            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeCap = StrokeCap.Round,
             color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
         Text(
             text = "$value/5",
-            modifier = Modifier.padding(start = 8.dp), 
+            modifier = Modifier.padding(start = 8.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline
         )

@@ -1,6 +1,7 @@
 package com.example.brewlog.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,9 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +80,7 @@ fun EditMachineScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Machine Specifications") },
+                title = { Text(stringResource(R.string.machine_specs)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -105,7 +108,7 @@ fun EditMachineScreen(
                 viewModel.updateEspressoMachine(updated)
                 onNavigateBack()
             }) {
-                Icon(Icons.Default.Done, "Save")
+                Icon(Icons.Default.Done, stringResource(R.string.save))
             }
         }
     ) { padding ->
@@ -118,7 +121,7 @@ fun EditMachineScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Photo Section
-            Text("Machine Photo", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text("Maschinen-Foto", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -135,31 +138,31 @@ fun EditMachineScreen(
                             contentScale = ContentScale.Crop
                         )
                         IconButton(
-                            onClick = { photoLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                            onClick = { photoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                             modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp)
                         ) {
                             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer) {
-                                Icon(Icons.Default.Edit, "Change Photo", modifier = Modifier.padding(8.dp))
+                                Icon(Icons.Default.Edit, "Foto ändern", modifier = Modifier.padding(8.dp))
                             }
                         }
                     } else {
-                        OutlinedButton(onClick = { photoLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                        OutlinedButton(onClick = { photoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                             Icon(Icons.Default.AddAPhoto, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Add Photo")
+                            Text("Foto hinzufügen")
                         }
                     }
                 }
             }
 
             HorizontalDivider()
-            Text("Identity", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            OutlinedTextField(value = brand, onValueChange = { brand = it }, label = { Text("Brand") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text("Model") }, modifier = Modifier.fillMaxWidth())
+            Text("Spezifikationen", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            OutlinedTextField(value = brand, onValueChange = { brand = it }, label = { Text(stringResource(R.string.brand)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text(stringResource(R.string.model)) }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
                 value = consumption, 
                 onValueChange = { consumption = it }, 
-                label = { Text("Weekly Consumption") }, 
+                label = { Text("Wöchentlicher Verbrauch (Tassen)") }, 
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
@@ -169,31 +172,25 @@ fun EditMachineScreen(
             OutlinedTextField(
                 value = diameter, 
                 onValueChange = { diameter = it }, 
-                label = { Text("Portafilter Diameter (mm)") }, 
+                label = { Text("${stringResource(R.string.portafilter_diameter)} (mm)") }, 
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = hasGrinder, onCheckedChange = { hasGrinder = it })
-                Text("Integrated Grinder")
+                Text(stringResource(R.string.integrated_grinder))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = hasSteamWand, onCheckedChange = { hasSteamWand = it })
-                Text("Steam Wand")
+                Text(stringResource(R.string.steam_wand))
             }
 
             HorizontalDivider()
-            Text("Maintenance Intervals (Days)", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            OutlinedTextField(value = waterDays, onValueChange = { waterDays = it }, label = { Text("Water Filter Days") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            OutlinedTextField(value = descaleDays, onValueChange = { descaleDays = it }, label = { Text("Descale Days") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            OutlinedTextField(value = backflushDays, onValueChange = { backflushDays = it }, label = { Text("Backflush Days") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            Text("Wartungs-Intervalle (Tage)", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            OutlinedTextField(value = waterDays, onValueChange = { waterDays = it }, label = { Text(stringResource(R.string.water_filter_replacement)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            OutlinedTextField(value = descaleDays, onValueChange = { descaleDays = it }, label = { Text(stringResource(R.string.descaling)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            OutlinedTextField(value = backflushDays, onValueChange = { backflushDays = it }, label = { Text(stringResource(R.string.backflushing)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
 
-            Text("Usage Limits (Cycles/Cups)", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            Text("Optional. Overrides 'Days' if consumption is high.", style = MaterialTheme.typography.bodySmall)
-            OutlinedTextField(value = waterCycles, onValueChange = { waterCycles = it }, label = { Text("Water Filter Cycles") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            OutlinedTextField(value = descaleCycles, onValueChange = { descaleCycles = it }, label = { Text("Descale Cycles") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            OutlinedTextField(value = backflushCycles, onValueChange = { backflushCycles = it }, label = { Text("Backflush Cycles") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            
             Spacer(Modifier.height(100.dp))
         }
     }

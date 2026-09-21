@@ -21,15 +21,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.data.ShotLog
 import com.example.brewlog.util.ExtractionEngine
+import com.example.brewlog.util.getLocalizedDiagnosis
+import com.example.brewlog.util.getLocalizedExplanation
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +50,7 @@ fun DialInScreen(
     val beans by viewModel.allLogs.collectAsState()
 
     var selectedBeanId by remember { mutableIntStateOf(initialBeanId ?: -1) }
-    var basketType by remember { mutableStateOf(initialBasketType ?: "double") } // "single" | "double"
+    var basketType by remember { mutableStateOf(initialBasketType ?: "double") }
     var doseIn by remember { mutableStateOf(initialDose?.toString() ?: "") }
     var grindSize by remember { mutableStateOf(initialGrindSize?.toString() ?: "") }
 
@@ -73,14 +78,14 @@ fun DialInScreen(
 
     // Timer State
     var isRunning by remember { mutableStateOf(false) }
-    var timeElapsed by remember { mutableLongStateOf(0L) } // Milliseconds
+    var timeElapsed by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(isRunning) {
         if (isRunning) {
             val startTime = System.currentTimeMillis() - timeElapsed
             while (isRunning) {
                 timeElapsed = System.currentTimeMillis() - startTime
-                delay(10)
+                delay(10.milliseconds)
             }
         }
     }
@@ -92,7 +97,6 @@ fun DialInScreen(
     var bodyEval by remember { mutableIntStateOf(0) }
     var notes by remember { mutableStateOf("") }
 
-    // Calculate recommendation based on current inputs
     val recommendation = remember(doseIn, grindSize, timeElapsed, yieldOut, acidityEval, bitternessEval, bodyEval) {
         val d = doseIn.toFloatOrNull() ?: 0f
         val g = grindSize.toFloatOrNull() ?: 0f
@@ -127,7 +131,7 @@ fun DialInScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dial-In & Extraktion") },
+                title = { Text(stringResource(R.string.dial_in_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -197,7 +201,7 @@ fun DialInScreen(
                         )
 
                         1 -> ShotStep(
-                            selectedBeanName = selectedBean?.coffeeName ?: "Keine Bohne gewählt",
+                            selectedBeanName = selectedBean?.coffeeName ?: stringResource(R.string.select_bean),
                             basketType = basketType,
                             doseIn = doseIn,
                             grindSize = grindSize,
@@ -239,7 +243,6 @@ fun DialInScreen(
                             onStartNewShot = {
                                 val t = timeElapsed / 1000f
                                 saveShot(viewModel, selectedBeanId, basketType, doseIn, grindSize, yieldOut, t, acidityEval, bitternessEval, bodyEval, notes, true, recommendation)
-                                // Apply recommendation to current inputs & restart at step 1
                                 grindSize = recommendation.recommendedGrindSize.toString()
                                 yieldOut = ""
                                 timeElapsed = 0L
@@ -282,9 +285,9 @@ private fun DialInStepHeader(
     onStepSelected: (Int) -> Unit
 ) {
     val steps = listOf(
-        StepData("Setup", "Vorbereitung", Icons.Default.Coffee),
-        StepData("Shot", "Extraktion", Icons.Default.Timer),
-        StepData("Ergebnis", "Bewertung", Icons.Default.CheckCircle)
+        StepData(stringResource(R.string.step_setup_title), stringResource(R.string.step_setup_subtitle), Icons.Default.Coffee),
+        StepData(stringResource(R.string.step_shot_title), stringResource(R.string.step_shot_subtitle), Icons.Default.Timer),
+        StepData(stringResource(R.string.step_result_title), stringResource(R.string.step_result_subtitle), Icons.Default.CheckCircle)
     )
 
     Row(
@@ -382,7 +385,7 @@ private fun SetupStep(
 ) {
     val canProceed = selectedBeanId != -1 && doseIn.toFloatOrNull() != null && grindSize.toFloatOrNull() != null
 
-    BrewSectionCard(title = "1. Bohnen & Siebträger Wahl", icon = Icons.Default.Coffee) {
+    BrewSectionCard(title = stringResource(R.string.beans_basket_choice), icon = Icons.Default.Coffee) {
         // Bean Dropdown
         var expanded by remember { mutableStateOf(false) }
         ExposedDropdownMenuBox(
@@ -390,11 +393,11 @@ private fun SetupStep(
             onExpandedChange = { if (!isRunning) expanded = it }
         ) {
             OutlinedTextField(
-                value = selectedBean?.let { "${it.coffeeName} (${it.roaster})" } ?: "Kaffeebohne wählen",
+                value = selectedBean?.let { "${it.coffeeName} (${it.roaster})" } ?: stringResource(R.string.select_bean),
                 onValueChange = {},
                 readOnly = true,
                 enabled = !isRunning,
-                label = { Text("Kaffeebohne") },
+                label = { Text(stringResource(R.string.select_bean)) },
                 trailingIcon = { if (!isRunning) ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
@@ -407,7 +410,7 @@ private fun SetupStep(
                 ) {
                     if (beans.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text("Keine Bohnen im Log vorhanden") },
+                            text = { Text(stringResource(R.string.no_beans_available)) },
                             onClick = { expanded = false }
                         )
                     } else {
@@ -433,7 +436,7 @@ private fun SetupStep(
         Spacer(Modifier.height(12.dp))
 
         // Basket Toggle
-        Text("Sieb-Größe (Basket)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+        Text(stringResource(R.string.basket_size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
         Spacer(Modifier.height(4.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
@@ -442,7 +445,7 @@ private fun SetupStep(
                 enabled = !isRunning,
                 shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
             ) {
-                Text("Einer (Single)")
+                Text(stringResource(R.string.single_basket))
             }
             SegmentedButton(
                 selected = basketType == "double",
@@ -450,7 +453,7 @@ private fun SetupStep(
                 enabled = !isRunning,
                 shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
             ) {
-                Text("Zweier (Double)")
+                Text(stringResource(R.string.double_basket))
             }
         }
 
@@ -462,7 +465,7 @@ private fun SetupStep(
                 value = doseIn,
                 onValueChange = onDoseChange,
                 enabled = !isRunning,
-                label = { Text("Dosis in g (In)") },
+                label = { Text(stringResource(R.string.dose_in)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 suffix = { Text("g") }
@@ -471,7 +474,7 @@ private fun SetupStep(
                 value = grindSize,
                 onValueChange = onGrindChange,
                 enabled = !isRunning,
-                label = { Text("Mahlgrad") },
+                label = { Text(stringResource(R.string.grind_size)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
@@ -495,7 +498,7 @@ private fun SetupStep(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Ziel-Parameter (Target)",
+                        stringResource(R.string.target_params),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -506,15 +509,15 @@ private fun SetupStep(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("Ziel-Menge (Yield)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text(stringResource(R.string.target_yield), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                         Text("${"%.1f".format(t.yieldOut)} g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     Column {
-                        Text("Ziel-Zeit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                         Text("${t.timeSecRange.start.toInt()} - ${t.timeSecRange.endInclusive.toInt()} s", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     Column {
-                        Text("Ratio", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text(stringResource(R.string.target_ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                         val doseVal = doseIn.toFloatOrNull() ?: 1f
                         val ratioVal = if (doseVal > 0) t.yieldOut / doseVal else 2f
                         Text("1 : ${"%.1f".format(ratioVal)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -522,7 +525,7 @@ private fun SetupStep(
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = if (t.isFromHistory) "• Basierend auf deinen früheren ausgewogenen Shots" else "• Standard 1:2 Ziel-Empfehlung",
+                    text = if (t.isFromHistory) stringResource(R.string.target_history_hint) else stringResource(R.string.target_default_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -540,7 +543,7 @@ private fun SetupStep(
             .fillMaxWidth()
             .height(52.dp)
     ) {
-        Text("Weiter zum Shot-Timer", fontSize = 16.sp)
+        Text(stringResource(R.string.next_to_shot), fontSize = 16.sp)
         Spacer(Modifier.width(8.dp))
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
     }
@@ -581,8 +584,9 @@ private fun ShotStep(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
+                val basketLabel = if (basketType == "single") stringResource(R.string.single_basket) else stringResource(R.string.double_basket)
                 Text(
-                    "${if (basketType == "single") "Single" else "Double"} • Dosis: ${doseIn}g • Mahlgrad: $grindSize",
+                    "$basketLabel • ${stringResource(R.string.dose_in)}: ${doseIn}g • ${stringResource(R.string.grind_size)}: $grindSize",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -592,7 +596,7 @@ private fun ShotStep(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 enabled = !isRunning
             ) {
-                Text("Setup bearbeiten", fontSize = 12.sp)
+                Text(stringResource(R.string.edit_setup), fontSize = 12.sp)
             }
         }
     }
@@ -617,10 +621,10 @@ private fun ShotStep(
             target?.let { t ->
                 val timeSec = timeElapsed / 1000f
                 val statusText = when {
-                    timeSec == 0f -> "Ziel: ${t.timeSecRange.start.toInt()}-${t.timeSecRange.endInclusive.toInt()} s"
-                    timeSec in t.timeSecRange -> "✓ Im Zielbereich"
-                    timeSec < t.timeSecRange.start -> "Unter Zielzeit (<${t.timeSecRange.start.toInt()}s)"
-                    else -> "Über Zielzeit (>${t.timeSecRange.endInclusive.toInt()}s)"
+                    timeSec == 0f -> "${stringResource(R.string.target_time)}: ${t.timeSecRange.start.toInt()}-${t.timeSecRange.endInclusive.toInt()} s"
+                    timeSec in t.timeSecRange -> stringResource(R.string.target_range_ok)
+                    timeSec < t.timeSecRange.start -> stringResource(R.string.target_range_fast)
+                    else -> stringResource(R.string.target_range_slow)
                 }
                 Text(
                     text = statusText,
@@ -643,7 +647,7 @@ private fun ShotStep(
             ) {
                 Icon(if (isRunning) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (isRunning) "STOPP" else "START", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(if (isRunning) stringResource(R.string.timer_stop) else stringResource(R.string.timer_start), fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
 
             if (!isRunning && timeElapsed > 0) {
@@ -651,19 +655,19 @@ private fun ShotStep(
                 TextButton(onClick = onResetTimer) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Timer zurücksetzen")
+                    Text(stringResource(R.string.reset_timer))
                 }
             }
         }
     }
 
     // Yield Output Input
-    BrewSectionCard(title = "2. Espresso Ausbeute (Yield)", icon = Icons.AutoMirrored.Filled.Assignment) {
+    BrewSectionCard(title = stringResource(R.string.espresso_yield), icon = Icons.AutoMirrored.Filled.Assignment) {
         OutlinedTextField(
             value = yieldOut,
             onValueChange = onYieldChange,
-            label = { Text("Erhaltene Menge in g (Yield Out)") },
-            placeholder = { Text("z.B. 36.0") },
+            label = { Text(stringResource(R.string.yield_out)) },
+            placeholder = { Text("36.0") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             suffix = { Text("g") }
@@ -687,12 +691,12 @@ private fun ShotStep(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Ratio", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                         Text("1 : ${"%.1f".format(y / d)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     if (t > 0) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Flussrate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                            Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                             Text("${"%.1f".format(y / t)} g/s", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -711,7 +715,7 @@ private fun ShotStep(
                 .weight(1f)
                 .height(52.dp)
         ) {
-            Text("Zurück")
+            Text(stringResource(R.string.back))
         }
 
         Button(
@@ -721,7 +725,7 @@ private fun ShotStep(
                 .weight(1.5f)
                 .height(52.dp)
         ) {
-            Text("Weiter zu Ergebnis", fontSize = 15.sp)
+            Text(stringResource(R.string.next_to_result), fontSize = 15.sp)
             Spacer(Modifier.width(6.dp))
             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         }
@@ -759,7 +763,7 @@ private fun ResultStep(
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Extraktions-Zusammenfassung", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+            Text(stringResource(R.string.extraction_summary), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
             Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -770,16 +774,16 @@ private fun ResultStep(
                     Text("${"%.1f".format(d)}g / ${"%.1f".format(y)}g", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Column {
-                    Text("Zeit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                     Text("${"%.1f".format(t)} s", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Column {
-                    Text("Ratio", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                     val ratio = if (d > 0) y / d else 0f
                     Text("1 : ${"%.1f".format(ratio)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Column {
-                    Text("Flussrate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                     val flow = if (t > 0) y / t else 0f
                     Text("${"%.1f".format(flow)} g/s", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
@@ -788,22 +792,36 @@ private fun ResultStep(
     }
 
     // Sensory Evaluation
-    BrewSectionCard(title = "3. Geschmacksprofil (Sensory Delta)", icon = Icons.Default.ThumbUp) {
-        EvaluationRow("Säure (Acidity)", acidityEval, listOf("Zu Sauer", "Ausgewogen", "Flach")) { onAcidityChange(it) }
-        EvaluationRow("Bitterkeit (Bitterness)", bitternessEval, listOf("Unterextr.", "Süß", "Bitter")) { onBitternessChange(it) }
-        EvaluationRow("Körper (Body)", bodyEval, listOf("Dünn", "Optimal", "Schwer")) { onBodyChange(it) }
+    BrewSectionCard(title = stringResource(R.string.sensory_evaluation), icon = Icons.Default.ThumbUp) {
+        EvaluationRow(
+            stringResource(R.string.acidity),
+            acidityEval,
+            listOf(stringResource(R.string.too_sour), stringResource(R.string.balanced), stringResource(R.string.flat))
+        ) { onAcidityChange(it) }
+
+        EvaluationRow(
+            stringResource(R.string.bitterness),
+            bitternessEval,
+            listOf(stringResource(R.string.under_extracted), stringResource(R.string.sweet), stringResource(R.string.bitter))
+        ) { onBitternessChange(it) }
+
+        EvaluationRow(
+            stringResource(R.string.body),
+            bodyEval,
+            listOf(stringResource(R.string.thin), stringResource(R.string.optimal), stringResource(R.string.heavy))
+        ) { onBodyChange(it) }
     }
 
     // Recommendation Card
     val cardColor = when {
         recommendation.puckPrepWarning -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-        recommendation.diagnosis == "Balanced Extraction" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+        recommendation.type == ExtractionEngine.DiagnosisType.BALANCED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
         else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
     }
 
     val iconVector = when {
         recommendation.puckPrepWarning -> Icons.Default.Warning
-        recommendation.diagnosis == "Balanced Extraction" -> Icons.Default.CheckCircle
+        recommendation.type == ExtractionEngine.DiagnosisType.BALANCED -> Icons.Default.CheckCircle
         else -> Icons.Default.Tune
     }
 
@@ -822,7 +840,7 @@ private fun ResultStep(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    recommendation.diagnosis,
+                    recommendation.getLocalizedDiagnosis(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (recommendation.puckPrepWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
@@ -831,7 +849,7 @@ private fun ResultStep(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                recommendation.explanation,
+                recommendation.getLocalizedExplanation(),
                 style = MaterialTheme.typography.bodyMedium
             )
 
@@ -840,20 +858,24 @@ private fun ResultStep(
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(Modifier.height(12.dp))
 
-                Text("Empfohlene Anpassungen:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.recommended_adjustments), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
 
                 if (recommendation.suggestedGrindChange != 0f) {
-                    val direction = if (recommendation.suggestedGrindChange > 0) "gröber" else "feiner"
+                    val direction = if (recommendation.suggestedGrindChange > 0)
+                        stringResource(R.string.grind_direction_coarser)
+                    else
+                        stringResource(R.string.grind_direction_finer)
+
                     Text(
-                        "• Mahlgrad $direction stellen: ${"%.1f".format(recommendation.recommendedGrindSize)} (aktuell $grindSize)",
+                        stringResource(R.string.adjust_grind, direction, recommendation.recommendedGrindSize, grindSize),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 if (recommendation.suggestedYieldChange != 0f) {
                     Text(
-                        "• Yield anpassen: ${"%.1f".format(recommendation.recommendedYieldOut)}g (aktuell $yieldOut g)",
+                        stringResource(R.string.adjust_yield, recommendation.recommendedYieldOut, yieldOut),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -866,8 +888,7 @@ private fun ResultStep(
     OutlinedTextField(
         value = notes,
         onValueChange = onNotesChange,
-        label = { Text("Notizen (Optional)") },
-        placeholder = { Text("Puck prep, Crema, Aroma-Noten...") },
+        label = { Text(stringResource(R.string.notes)) },
         modifier = Modifier.fillMaxWidth()
     )
 
@@ -881,10 +902,10 @@ private fun ResultStep(
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            val label = if (recommendation.diagnosis == "Balanced Extraction")
-                "Shot loggen & Einstellungen behalten"
+            val label = if (recommendation.type == ExtractionEngine.DiagnosisType.BALANCED)
+                stringResource(R.string.log_and_keep)
             else
-                "Shot loggen & Empfehlungen speichern"
+                stringResource(R.string.log_and_apply)
             Text(label, fontSize = 15.sp)
         }
 
@@ -894,7 +915,7 @@ private fun ResultStep(
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text("Nur Shot loggen (Bohnen-Setup unverändert)")
+            Text(stringResource(R.string.log_only))
         }
 
         TextButton(
@@ -903,14 +924,14 @@ private fun ResultStep(
         ) {
             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text("Shot loggen & nächsten Test-Shot starten")
+            Text(stringResource(R.string.log_and_next_shot))
         }
 
         OutlinedButton(
             onClick = onBackClick,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Zurück zum Shot-Timer")
+            Text(stringResource(R.string.back))
         }
     }
 }
@@ -962,13 +983,12 @@ private fun saveShot(
     )
 
     if (updateBean) {
-        viewModel.addShotLog(shot, false) // Log with current values
-        // Update bean with RECOMMENDED values
+        viewModel.addShotLog(shot, false)
         viewModel.updateBeanFromRecommendation(
             beanId = beanId,
             basketType = basketType,
             recommendedGrind = recommendation.recommendedGrindSize,
-            recommendedDose = shot.doseIn.toDouble(), // Dose usually stays the same in this logic
+            recommendedDose = shot.doseIn.toDouble(),
             recommendedYield = recommendation.recommendedYieldOut.toDouble()
         )
     } else {

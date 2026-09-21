@@ -1,6 +1,28 @@
 <resources>
+    <!-- App & Navigation -->
     <string name="app_name">BrewLog</string>
     <string name="settings">Settings</string>
+    <string name="my_brews">My Brews</string>
+    <string name="shot_history">Shot History</string>
+    <string name="dial_in_title">Dial-In &amp; Extraction</string>
+    <string name="espresso_machine">My Espresso Machine</string>
+    <string name="edit_machine">Edit Machine</string>
+    <string name="machine_specs">Machine Specifications</string>
+    <string name="add_brew">Add Brew</string>
+    <string name="edit_brew">Edit Brew</string>
+
+    <!-- General Actions -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="reset">Reset</string>
+    <string name="back">Back</string>
+    <string name="next">Next</string>
+    <string name="search">Search</string>
+    <string name="search_placeholder">Search coffee or roaster&#8230;</string>
+
+    <!-- Settings & Appearance -->
     <string name="appearance">Appearance</string>
     <string name="theme">Theme</string>
     <string name="theme_system">System Default</string>
@@ -15,5 +37,155 @@
     <string name="github_repo">GitHub Repository</string>
     <string name="select_theme">Select Theme</string>
     <string name="select_language">Select Language</string>
-    <string name="cancel">Cancel</string>
+
+    <!-- Main Brew List -->
+    <string name="no_brews_found">No brew logs found.</string>
+    <string name="add_first_brew">Tap + to add your first coffee bean!</string>
+    <string name="delete_coffee_confirm_title">Delete Coffee</string>
+    <string name="delete_coffee_confirm_msg">Are you sure you want to delete "%s"? This cannot be undone.</string>
+    <string name="dial_in_button">Dial-In</string>
+
+    <!-- Add / Edit Brew Screen -->
+    <string name="coffee_identity">Coffee Details</string>
+    <string name="coffee_name">Coffee Name</string>
+    <string name="roaster">Roaster</string>
+    <string name="origin">Origin</string>
+    <string name="roast_level">Roast Level</string>
+    <string name="preparation_settings">Preparation Settings</string>
+    <string name="single_grams">Single Dose (g)</string>
+    <string name="double_grams">Double Dose (g)</string>
+    <string name="grind_size">Grind Size</string>
+    <string name="sensory_profile">Sensory Profile</string>
+    <string name="sweetness">Sweetness</string>
+    <string name="acidity">Acidity</string>
+    <string name="body">Body</string>
+    <string name="bitterness">Bitterness</string>
+    <string name="flavor_tags">Flavor Tags</string>
+    <string name="notes">Notes</string>
+    <string name="additional_info">Additional Info</string>
+    <string name="rating">Rating</string>
+
+    <!-- Dial-In Steps -->
+    <string name="step_setup_title">Setup</string>
+    <string name="step_setup_subtitle">Preparation</string>
+    <string name="step_shot_title">Shot</string>
+    <string name="step_shot_subtitle">Extraction</string>
+    <string name="step_result_title">Result</string>
+    <string name="step_result_subtitle">Evaluation</string>
+
+    <!-- Dial-In Content -->
+    <string name="beans_basket_choice">1. Beans &amp; Basket Choice</string>
+    <string name="select_bean">Select Coffee Bean</string>
+    <string name="no_beans_available">No coffee beans found</string>
+    <string name="basket_size">Basket Size</string>
+    <string name="single_basket">Single</string>
+    <string name="double_basket">Double</string>
+    <string name="dose_in">Dose in g (In)</string>
+    <string name="target_params">Target Parameters</string>
+    <string name="target_yield">Target Yield</string>
+    <string name="target_time">Target Time</string>
+    <string name="target_ratio">Target Ratio</string>
+    <string name="target_history_hint">• Based on your previous balanced shots</string>
+    <string name="target_default_hint">• Standard 1:2 target recommendation</string>
+    <string name="next_to_shot">Next to Shot Timer</string>
+
+    <!-- During Shot -->
+    <string name="active_setup">Active Setup</string>
+    <string name="edit_setup">Edit Setup</string>
+    <string name="shot_timer">Shot Timer</string>
+    <string name="timer_start">START</string>
+    <string name="timer_stop">STOP</string>
+    <string name="reset_timer">Reset Timer</string>
+    <string name="espresso_yield">2. Espresso Yield</string>
+    <string name="yield_out">Yield Out (g)</string>
+    <string name="ratio">Ratio</string>
+    <string name="flow_rate">Flow Rate</string>
+    <string name="target_range_ok">✓ In Target Range</string>
+    <string name="target_range_fast">Below Target Time</string>
+    <string name="target_range_slow">Above Target Time</string>
+    <string name="next_to_result">Next to Evaluation</string>
+
+    <!-- Result & Evaluation -->
+    <string name="extraction_summary">Extraction Summary</string>
+    <string name="sensory_evaluation">3. Sensory Evaluation</string>
+    <string name="too_sour">Too Sour</string>
+    <string name="balanced">Balanced</string>
+    <string name="flat">Flat</string>
+    <string name="under_extracted">Under-extr.</string>
+    <string name="sweet">Sweet</string>
+    <string name="bitter">Bitter</string>
+
+    <string name="thin">Thin</string>
+    <string name="optimal">Optimal</string>
+    <string name="heavy">Heavy</string>
+    <string name="recommended_adjustments">Recommended Adjustments:</string>
+    <string name="grind_direction_coarser">coarser</string>
+    <string name="grind_direction_finer">finer</string>
+    <string name="adjust_grind">Set grind %1$s to %2$.1f (currently %3$s)</string>
+    <string name="adjust_yield">Adjust yield to %1$.1f g (currently %2$s g)</string>
+    <string name="log_and_keep">Log Shot &amp; Keep Settings</string>
+    <string name="log_and_apply">Log Shot &amp; Save Recommendations</string>
+    <string name="log_only">Log Shot Only (Bean settings unchanged)</string>
+    <string name="log_and_next_shot">Log Shot &amp; Start Next Test Shot</string>
+
+    <!-- Shot History -->
+    <string name="all_beans">All Beans</string>
+    <string name="no_shots_logged">No shots logged yet.</string>
+    <string name="extraction_analysis">Extraction Analysis</string>
+    <string name="use_as_dial_in_basis">Use as basis for Dial-In</string>
+
+    <!-- Filter & Sorting -->
+    <string name="filters">Filters</string>
+    <string name="reset_all">Reset All</string>
+    <string name="sort_by">Sort By</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_rating">Rating</string>
+    <string name="rating_range">Rating Range</string>
+    <string name="apply_filters">Apply Filters</string>
+
+    <!-- Machine Screen -->
+    <string name="no_machine_title">No machine added yet</string>
+    <string name="no_machine_sub">Add your espresso machine to track maintenance and specs.</string>
+    <string name="ai_setup">AI Setup</string>
+    <string name="manual_setup">Manual Setup</string>
+    <string name="machine_base_info">Machine Base Information</string>
+    <string name="portafilter_diameter">Portafilter</string>
+    <string name="integrated_grinder">Integrated Grinder</string>
+    <string name="steam_wand">Steam Wand</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="weekly_consumption">Weekly Consumption: %d cups</string>
+    <string name="maintenance_tracking">Maintenance Tracking</string>
+    <string name="water_filter_replacement">Water Filter Replacement</string>
+    <string name="descaling">Descaling</string>
+    <string name="backflushing">Backflushing</string>
+    <string name="mark_completed">Mark Completed</string>
+    <string name="overdue_by_days">Overdue by %d days</string>
+    <string name="days_remaining">%d days remaining</string>
+    <string name="reset_machine">Reset Machine</string>
+    <string name="setup_machine_ai">Setup Machine with AI</string>
+    <string name="brand">Brand</string>
+    <string name="model">Model</string>
+    <string name="find_with_ai">Find with AI</string>
+    <string name="ai_fetching_specs">AI is fetching machine specs&#8230;</string>
+
+    <!-- Diagnoses -->
+    <string name="diag_balanced">Balanced Extraction</string>
+    <string name="diag_balanced_desc">Extraction is dialed in. Keep current parameters.</string>
+    <string name="diag_channeling">Suspected Channeling</string>
+    <string name="diag_channeling_desc">Flow indicates channel formation. Contact time was long (%1$.1fs), but shot is still sour/thin. Do not grind finer. Improve puck prep (WDT distribution, level tamp).</string>
+    <string name="diag_severe_under">Severe Under-extraction</string>
+    <string name="diag_severe_under_desc">Shot was too fast (%1$.1fs). Grind significantly finer.</string>
+    <string name="diag_mild_under">Mild Under-extraction</string>
+    <string name="diag_mild_under_desc">Extraction was slightly fast or acidic. Grind slightly finer.</string>
+    <string name="diag_severe_over">Severe Over-extraction</string>
+    <string name="diag_severe_over_desc">Shot was choked/slow (%1$.1fs). Grind significantly coarser.</string>
+    <string name="diag_mild_over">Mild Over-extraction</string>
+    <string name="diag_mild_over_desc">Extraction was slightly slow or bitter. Grind slightly coarser.</string>
+    <string name="diag_high_strength">High Strength / Overly Concentrated</string>
+    <string name="diag_high_strength_desc">Taste is balanced but too intense. Increase yield to lengthen ratio.</string>
+    <string name="diag_low_strength">Low Strength / Watery</string>
+    <string name="diag_low_strength_desc">Taste is balanced but watery. Reduce yield to shorten ratio.</string>
+    <string name="diag_inconclusive">Inconclusive Shot</string>
+    <string name="diag_inconclusive_desc">Parameters conflict with sensory feedback. Keep settings and pull a verification shot.</string>
 </resources>

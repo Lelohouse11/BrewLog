@@ -14,10 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 
 val FLAVOR_TAG_OPTIONS = listOf(
@@ -94,13 +97,11 @@ fun AddBrewScreen(
                 showErrors.value = false
             }
             
-            // Auto-fill Roast
             if (it.roastLevel.isNotEmpty()) {
                 hasRoastLevel = true
                 roastLevel = it.roastLevel
             }
             
-            // New Auto-fill for Sensory and Tags
             if (it.hasSensoryProfile) {
                 hasSensoryProfile = true
                 sweetness = it.sweetness.toFloat()
@@ -113,7 +114,6 @@ fun AddBrewScreen(
                 selectedFlavorTags = it.flavorTags.toSet()
             }
 
-            // New Auto-fill for Blend Settings
             if (it.hasBlendSettings) {
                 hasBlendSettings = true
                 arabicaPercent = it.arabicaPercentage
@@ -145,7 +145,7 @@ fun AddBrewScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(if (existingLog == null) "Add Brew Setting" else "Edit Brew Setting") },
+                title = { Text(if (existingLog == null) stringResource(R.string.add_brew) else stringResource(R.string.edit_brew)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -216,11 +216,11 @@ fun AddBrewScreen(
                 if (isScanning) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Spacer(Modifier.width(12.dp))
-                    Text("Analyzing Label...")
+                    Text("Etikett scannen...")
                 } else {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
-                    Text("Scan Coffee Label (AI)")
+                    Text("Kaffee-Etikett scannen (KI)")
                 }
             }
 
@@ -229,19 +229,16 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 1: COFFEE IDENTITY ---
-            BrewSectionCard(title = "Coffee Identity", icon = Icons.Default.Coffee) {
+            BrewSectionCard(title = stringResource(R.string.coffee_identity), icon = Icons.Default.Coffee) {
                 OutlinedTextField(
                     value = coffeeName,
                     onValueChange = { 
                         coffeeName = it 
                         if (it.isNotBlank()) showErrors.value = false
                     },
-                    label = { Text("Coffee Name *") },
+                    label = { Text("${stringResource(R.string.coffee_name)} *") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = showErrors.value && isNameMissing,
-                    supportingText = {
-                        if (showErrors.value && isNameMissing) Text("Name is required")
-                    }
+                    isError = showErrors.value && isNameMissing
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -252,12 +249,9 @@ fun AddBrewScreen(
                         roaster = it 
                         if (it.isNotBlank()) showErrors.value = false
                     },
-                    label = { Text("Roaster / Company *") },
+                    label = { Text("${stringResource(R.string.roaster)} *") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = showErrors.value && isRoasterMissing,
-                    supportingText = {
-                        if (showErrors.value && isRoasterMissing) Text("Roaster is required")
-                    }
+                    isError = showErrors.value && isRoasterMissing
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -266,7 +260,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasRoastLevel, onCheckedChange = { hasRoastLevel = it })
-                        Text("Add Roast Level", style = MaterialTheme.typography.bodyMedium)
+                        Text("${stringResource(R.string.roast_level)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
                     }
                     if (hasRoastLevel) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
@@ -287,7 +281,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasBlendSettings, onCheckedChange = { hasBlendSettings = it })
-                        Text("Add Blend Composition (%)", style = MaterialTheme.typography.bodyMedium)
+                        Text("Blend-Mischung (%) hinzufügen", style = MaterialTheme.typography.bodyMedium)
                     }
 
                     if (hasBlendSettings) {
@@ -325,7 +319,7 @@ fun AddBrewScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Total Percentage:", 
+                                "Gesamt-Prozent:", 
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -338,7 +332,7 @@ fun AddBrewScreen(
                         }
                         if (totalPercentage != 100) {
                             Text(
-                                "Total must be exactly 100%",
+                                "Summe muss genau 100% ergeben",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -348,7 +342,7 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 2: PREPARATION SETTINGS ---
-            BrewSectionCard(title = "Preparation Settings", icon = Icons.Default.Settings) {
+            BrewSectionCard(title = stringResource(R.string.preparation_settings), icon = Icons.Default.Settings) {
                 OutlinedTextField(
                     value = grindSize,
                     onValueChange = { newValue ->
@@ -356,20 +350,20 @@ fun AddBrewScreen(
                             grindSize = newValue
                         }
                     },
-                    label = { Text("Grind Size") },
+                    label = { Text(stringResource(R.string.grind_size)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
 
                 Spacer(Modifier.height(16.dp))
-                Text("Basket Settings (Grams)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                Text(stringResource(R.string.basket_size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
                 Spacer(Modifier.height(8.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     OutlinedTextField(
                         value = singleGrams,
                         onValueChange = { singleGrams = it },
-                        label = { Text("Single") },
+                        label = { Text(stringResource(R.string.single_basket)) },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("9.0") },
                         suffix = { Text("g") },
@@ -378,7 +372,7 @@ fun AddBrewScreen(
                     OutlinedTextField(
                         value = doubleGrams,
                         onValueChange = { doubleGrams = it },
-                        label = { Text("Double") },
+                        label = { Text(stringResource(R.string.double_basket)) },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("18.0") },
                         suffix = { Text("g") },
@@ -388,15 +382,15 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 3: EVALUATION ---
-            BrewSectionCard(title = "Evaluation", icon = Icons.Default.Stars) {
+            BrewSectionCard(title = stringResource(R.string.sensory_evaluation), icon = Icons.Default.Stars) {
                 // Rating
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasRating, onCheckedChange = { hasRating = it })
-                        Text("Add Overall Rating", style = MaterialTheme.typography.bodyMedium)
+                        Text("${stringResource(R.string.rating)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
                     }
                     if (hasRating) {
-                        Text("Rating: ${rating.toInt()}/10", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
+                        Text("${stringResource(R.string.rating)}: ${rating.toInt()}/10", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
                         Slider(
                             value = rating,
                             onValueChange = { rating = it },
@@ -413,15 +407,15 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasSensoryProfile, onCheckedChange = { hasSensoryProfile = it })
-                        Text("Add Sensory Profile", style = MaterialTheme.typography.bodyMedium)
+                        Text("${stringResource(R.string.sensory_profile)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
                     }
                     
                     if (hasSensoryProfile) {
                         Spacer(Modifier.height(8.dp))
-                        SensorySlider("Sweetness", sweetness) { sweetness = it }
-                        SensorySlider("Acidity", acidity) { acidity = it }
-                        SensorySlider("Body", body) { body = it }
-                        SensorySlider("Bitterness", bitterness) { bitterness = it }
+                        SensorySlider(stringResource(R.string.sweetness), sweetness) { sweetness = it }
+                        SensorySlider(stringResource(R.string.acidity), acidity) { acidity = it }
+                        SensorySlider(stringResource(R.string.body), body) { body = it }
+                        SensorySlider(stringResource(R.string.bitterness), bitterness) { bitterness = it }
                     }
                 }
 
@@ -431,7 +425,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasFlavorTags, onCheckedChange = { hasFlavorTags = it })
-                        Text("Add Flavor Tags", style = MaterialTheme.typography.bodyMedium)
+                        Text("${stringResource(R.string.flavor_tags)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
                     }
 
                     if (hasFlavorTags) {
@@ -459,13 +453,13 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 4: ADDITIONAL INFO ---
-            BrewSectionCard(title = "Additional Info", icon = Icons.Default.EditNote) {
+            BrewSectionCard(title = stringResource(R.string.additional_info), icon = Icons.Default.EditNote) {
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notes / Comments") },
+                    label = { Text(stringResource(R.string.notes)) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. beans for espresso, roast date, etc.") },
+                    placeholder = { Text("z.B. Espresso Röstung, Röstdatum...") },
                     minLines = 3,
                     maxLines = 5
                 )
@@ -535,7 +529,7 @@ fun PercentageSlider(label: String, value: Int, maxAllowed: Int, onValueChange: 
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Preview(showBackground = true)
 @Composable
 fun AddBrewScreenPreview() {
     MaterialTheme {

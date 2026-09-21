@@ -21,12 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.brewlog.R
 import com.example.brewlog.data.ShotLogWithBean
 import com.example.brewlog.util.ExtractionEngine
+import com.example.brewlog.util.getLocalizedDiagnosis
+import com.example.brewlog.util.getLocalizedExplanation
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -52,7 +56,7 @@ fun ShotHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Shot Historie") },
+                title = { Text(stringResource(R.string.shot_history)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -76,7 +80,7 @@ fun ShotHistoryScreen(
                     FilterChip(
                         selected = selectedBeanId == null,
                         onClick = { selectedBeanId = null },
-                        label = { Text("Alle Bohnen") }
+                        label = { Text(stringResource(R.string.all_beans)) }
                     )
                 }
                 items(beans) { bean ->
@@ -93,7 +97,7 @@ fun ShotHistoryScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.History, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(Modifier.height(16.dp))
-                        Text("Noch keine Shots aufgezeichnet.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
+                        Text(stringResource(R.string.no_shots_logged), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                     }
                 }
             } else {
@@ -195,7 +199,7 @@ fun ShotLogCard(
                         shape = MaterialTheme.shapes.extraSmall
                     ) {
                         Text(
-                            text = if (shot.basketType.lowercase() == "single") "SINGLE" else "DOUBLE",
+                            text = if (shot.basketType.lowercase() == "single") stringResource(R.string.single_basket).uppercase() else stringResource(R.string.double_basket).uppercase(),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Black,
@@ -220,7 +224,7 @@ fun ShotLogCard(
             ) {
                 MetricItem(Icons.Default.Scale, "${"%.1f".format(shot.doseIn)}g → ${"%.1f".format(shot.yieldOut)}g")
                 MetricItem(Icons.Default.Timer, "${"%.1f".format(shot.extractionTimeSec)}s")
-                MetricItem(Icons.Default.Settings, "Mahlgrad: ${"%.1f".format(shot.grindSize)}")
+                MetricItem(Icons.Default.Settings, "${stringResource(R.string.grind_size)}: ${"%.1f".format(shot.grindSize)}")
             }
 
             // Collapsed quick preview or expanded details
@@ -238,18 +242,18 @@ fun ShotLogCard(
                     val isBalanced = shot.acidityEval == 0 && shot.bitternessEval == 0 && shot.bodyEval == 0
 
                     if (isBalanced) {
-                        EvaluationBadge("Ausgewogen", MaterialTheme.colorScheme.primary)
+                        EvaluationBadge(stringResource(R.string.balanced), MaterialTheme.colorScheme.primary)
                     } else {
                         if (shot.acidityEval != 0) {
-                            val label = if (shot.acidityEval == -1) "Zu Sauer" else "Flach"
+                            val label = if (shot.acidityEval == -1) stringResource(R.string.too_sour) else stringResource(R.string.flat)
                             EvaluationBadge(label, MaterialTheme.colorScheme.tertiary)
                         }
                         if (shot.bitternessEval != 0) {
-                            val label = if (shot.bitternessEval == -1) "Unterextr." else "Bitter"
+                            val label = if (shot.bitternessEval == -1) stringResource(R.string.under_extracted) else stringResource(R.string.bitter)
                             EvaluationBadge(label, MaterialTheme.colorScheme.error)
                         }
                         if (shot.bodyEval != 0) {
-                            val label = if (shot.bodyEval == -1) "Dünner Körper" else "Schwerer Körper"
+                            val label = if (shot.bodyEval == -1) stringResource(R.string.thin) else stringResource(R.string.heavy)
                             EvaluationBadge(label, MaterialTheme.colorScheme.secondary)
                         }
                     }
@@ -267,7 +271,7 @@ fun ShotLogCard(
                     Spacer(Modifier.height(16.dp))
 
                     // Calculated Extractions Stats (Ratio & Flow Rate)
-                    Text("Extraktions-Analyse", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.extraction_analysis), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.height(8.dp))
 
                     val ratio = if (shot.doseIn > 0) shot.yieldOut / shot.doseIn else 0f
@@ -283,11 +287,11 @@ fun ShotLogCard(
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Brühverhältnis", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                                Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                                 Text("1 : ${"%.1f".format(ratio)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Flussrate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                                Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                                 Text("${"%.1f".format(flowRate)} g/s", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -296,16 +300,16 @@ fun ShotLogCard(
                     Spacer(Modifier.height(16.dp))
 
                     // Sensory Delta Profile Details
-                    Text("Geschmacksprofil", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.sensory_profile), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.height(6.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        SensoryDetailChip("Säure", when(shot.acidityEval) { -1 -> "Zu Sauer"; 1 -> "Flach"; else -> "Ausgewogen" }, modifier = Modifier.weight(1f))
-                        SensoryDetailChip("Bitterkeit", when(shot.bitternessEval) { -1 -> "Unterextr."; 1 -> "Bitter"; else -> "Süß" }, modifier = Modifier.weight(1f))
-                        SensoryDetailChip("Körper", when(shot.bodyEval) { -1 -> "Dünn"; 1 -> "Schwer"; else -> "Optimal" }, modifier = Modifier.weight(1f))
+                        SensoryDetailChip(stringResource(R.string.acidity), when(shot.acidityEval) { -1 -> stringResource(R.string.too_sour); 1 -> stringResource(R.string.flat); else -> stringResource(R.string.balanced) }, modifier = Modifier.weight(1f))
+                        SensoryDetailChip(stringResource(R.string.bitterness), when(shot.bitternessEval) { -1 -> stringResource(R.string.under_extracted); 1 -> stringResource(R.string.bitter); else -> stringResource(R.string.sweet) }, modifier = Modifier.weight(1f))
+                        SensoryDetailChip(stringResource(R.string.body), when(shot.bodyEval) { -1 -> stringResource(R.string.thin); 1 -> stringResource(R.string.heavy); else -> stringResource(R.string.optimal) }, modifier = Modifier.weight(1f))
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -313,7 +317,7 @@ fun ShotLogCard(
                     // Recommendation Card
                     val cardColor = when {
                         recommendation.puckPrepWarning -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-                        recommendation.diagnosis == "Balanced Extraction" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        recommendation.type == ExtractionEngine.DiagnosisType.BALANCED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                         else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                     }
 
@@ -332,7 +336,7 @@ fun ShotLogCard(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    recommendation.diagnosis,
+                                    recommendation.getLocalizedDiagnosis(),
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = if (recommendation.puckPrepWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
@@ -340,7 +344,7 @@ fun ShotLogCard(
                             }
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                recommendation.explanation,
+                                recommendation.getLocalizedExplanation(),
                                 style = MaterialTheme.typography.bodySmall
                             )
 
@@ -349,11 +353,11 @@ fun ShotLogCard(
                                 Text(
                                     text = buildString {
                                         if (recommendation.suggestedGrindChange != 0f) {
-                                            append("Empfohlener Mahlgrad: ${"%.1f".format(recommendation.recommendedGrindSize)}")
+                                            append("${stringResource(R.string.grind_size)}: ${"%.1f".format(recommendation.recommendedGrindSize)}")
                                         }
                                         if (recommendation.suggestedYieldChange != 0f) {
                                             if (isNotEmpty()) append(" | ")
-                                            append("Empfohlener Yield: ${"%.1f".format(recommendation.recommendedYieldOut)}g")
+                                            append("Yield: ${"%.1f".format(recommendation.recommendedYieldOut)}g")
                                         }
                                     },
                                     style = MaterialTheme.typography.labelSmall,
@@ -367,7 +371,7 @@ fun ShotLogCard(
                     // Notes if present
                     if (shot.notes.isNotEmpty()) {
                         Spacer(Modifier.height(12.dp))
-                        Text("Notizen", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                        Text(stringResource(R.string.notes), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         Spacer(Modifier.height(4.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
@@ -392,7 +396,7 @@ fun ShotLogCard(
                     ) {
                         Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Als Basis für Dial-In verwenden")
+                        Text(stringResource(R.string.use_as_dial_in_basis))
                     }
                 }
             }

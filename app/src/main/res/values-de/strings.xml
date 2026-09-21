@@ -1,6 +1,28 @@
 <resources>
+    <!-- App & Navigation -->
     <string name="app_name">BrewLog</string>
     <string name="settings">Einstellungen</string>
+    <string name="my_brews">Meine Kaffees</string>
+    <string name="shot_history">Shot Historie</string>
+    <string name="dial_in_title">Dial-In &amp; Extraktion</string>
+    <string name="espresso_machine">Meine Siebträgermaschine</string>
+    <string name="edit_machine">Maschine bearbeiten</string>
+    <string name="machine_specs">Maschinen-Spezifikationen</string>
+    <string name="add_brew">Kaffee hinzufügen</string>
+    <string name="edit_brew">Kaffee bearbeiten</string>
+
+    <!-- General Actions -->
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="delete">Löschen</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="reset">Zurücksetzen</string>
+    <string name="back">Zurück</string>
+    <string name="next">Weiter</string>
+    <string name="search">Suchen</string>
+    <string name="search_placeholder">Kaffee oder Röster suchen&#8230;</string>
+
+    <!-- Settings & Appearance -->
     <string name="appearance">Erscheinungsbild</string>
     <string name="theme">Design</string>
     <string name="theme_system">Systemstandard</string>
@@ -15,5 +37,155 @@
     <string name="github_repo">GitHub Repository</string>
     <string name="select_theme">Design auswählen</string>
     <string name="select_language">Sprache auswählen</string>
-    <string name="cancel">Abbrechen</string>
+
+    <!-- Main Brew List -->
+    <string name="no_brews_found">Keine Brühprotokolle gefunden.</string>
+    <string name="add_first_brew">Tippe auf +, um deinen ersten Kaffee hinzuzufügen!</string>
+    <string name="delete_coffee_confirm_title">Kaffee löschen</string>
+    <string name="delete_coffee_confirm_msg">Bist du sicher, dass du "%s" löschen möchtest? Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="dial_in_button">Dial-In</string>
+
+    <!-- Add / Edit Brew Screen -->
+    <string name="coffee_identity">Bohnen-Details</string>
+    <string name="coffee_name">Name des Kaffees</string>
+    <string name="roaster">Rösterei</string>
+    <string name="origin">Herkunft</string>
+    <string name="roast_level">Röstgrad</string>
+    <string name="preparation_settings">Siebträger-Rezept</string>
+    <string name="single_grams">Dosis Single (g)</string>
+    <string name="double_grams">Dosis Double (g)</string>
+    <string name="grind_size">Mahlgrad</string>
+    <string name="sensory_profile">Sensorisches Profil</string>
+    <string name="sweetness">Süße</string>
+    <string name="acidity">Säure</string>
+    <string name="body">Körper</string>
+    <string name="bitterness">Bitterkeit</string>
+    <string name="flavor_tags">Geschmacksnoten</string>
+    <string name="notes">Notizen</string>
+    <string name="additional_info">Zusätzliche Infos</string>
+    <string name="rating">Bewertung</string>
+
+    <!-- Dial-In Steps -->
+    <string name="step_setup_title">Setup</string>
+    <string name="step_setup_subtitle">Vorbereitung</string>
+    <string name="step_shot_title">Shot</string>
+    <string name="step_shot_subtitle">Extraktion</string>
+    <string name="step_result_title">Ergebnis</string>
+    <string name="step_result_subtitle">Bewertung</string>
+
+    <!-- Dial-In Content -->
+    <string name="beans_basket_choice">1. Bohnen &amp; Siebträger Wahl</string>
+    <string name="select_bean">Kaffeebohne wählen</string>
+    <string name="no_beans_available">Keine Bohnen im Log vorhanden</string>
+    <string name="basket_size">Sieb-Größe (Basket)</string>
+    <string name="single_basket">Einer (Single)</string>
+    <string name="double_basket">Zweier (Double)</string>
+    <string name="dose_in">Dosis in g (In)</string>
+    <string name="target_params">Ziel-Parameter (Target)</string>
+    <string name="target_yield">Ziel-Menge (Yield)</string>
+    <string name="target_time">Ziel-Zeit</string>
+    <string name="target_ratio">Ratio</string>
+    <string name="target_history_hint">• Basierend auf deinen früheren ausgewogenen Shots</string>
+    <string name="target_default_hint">• Standard 1:2 Ziel-Empfehlung</string>
+    <string name="next_to_shot">Weiter zum Shot-Timer</string>
+
+    <!-- During Shot -->
+    <string name="active_setup">Aktives Setup</string>
+    <string name="edit_setup">Setup bearbeiten</string>
+    <string name="shot_timer">Shot-Timer</string>
+    <string name="timer_start">START</string>
+    <string name="timer_stop">STOPP</string>
+    <string name="reset_timer">Timer zurücksetzen</string>
+    <string name="espresso_yield">2. Espresso Ausbeute (Yield)</string>
+    <string name="yield_out">Erhaltene Menge in g (Yield Out)</string>
+    <string name="ratio">Ratio</string>
+    <string name="flow_rate">Flussrate</string>
+    <string name="target_range_ok">✓ Im Zielbereich</string>
+    <string name="target_range_fast">Unter Zielzeit</string>
+    <string name="target_range_slow">Über Zielzeit</string>
+    <string name="next_to_result">Weiter zu Ergebnis</string>
+
+    <!-- Result & Evaluation -->
+    <string name="extraction_summary">Extraktions-Zusammenfassung</string>
+    <string name="sensory_evaluation">3. Geschmacksprofil (Sensory Delta)</string>
+    <string name="too_sour">Zu Sauer</string>
+    <string name="balanced">Ausgewogen</string>
+    <string name="flat">Flach</string>
+    <string name="under_extracted">Unterextr.</string>
+    <string name="sweet">Süß</string>
+    <string name="bitter">Bitter</string>
+
+    <string name="thin">Dünn</string>
+    <string name="optimal">Optimal</string>
+    <string name="heavy">Schwer</string>
+    <string name="recommended_adjustments">Empfohlene Anpassungen:</string>
+    <string name="grind_direction_coarser">gröber</string>
+    <string name="grind_direction_finer">feiner</string>
+    <string name="adjust_grind">• Mahlgrad %1$s stellen: %2$.1f (aktuell %3$s)</string>
+    <string name="adjust_yield">• Yield anpassen: %1$.1f g (aktuell %2$s g)</string>
+    <string name="log_and_keep">Shot loggen &amp; Einstellungen behalten</string>
+    <string name="log_and_apply">Shot loggen &amp; Empfehlungen speichern</string>
+    <string name="log_only">Nur Shot loggen (Bohnen-Setup unverändert)</string>
+    <string name="log_and_next_shot">Shot loggen &amp; nächsten Test-Shot starten</string>
+
+    <!-- Shot History -->
+    <string name="all_beans">Alle Bohnen</string>
+    <string name="no_shots_logged">Noch keine Shots aufgezeichnet.</string>
+    <string name="extraction_analysis">Extraktions-Analyse</string>
+    <string name="use_as_dial_in_basis">Als Basis für Dial-In verwenden</string>
+
+    <!-- Filter & Sorting -->
+    <string name="filters">Filter &amp; Sortierung</string>
+    <string name="reset_all">Alle zurücksetzen</string>
+    <string name="sort_by">Sortieren nach</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_rating">Bewertung</string>
+    <string name="rating_range">Bewertungs-Bereich</string>
+    <string name="apply_filters">Filter anwenden</string>
+
+    <!-- Machine Screen -->
+    <string name="no_machine_title">Noch keine Maschine hinzugefügt</string>
+    <string name="no_machine_sub">Füge deine Siebträgermaschine hinzu, um Wartung und Spezifikationen zu verfolgen.</string>
+    <string name="ai_setup">KI-Setup</string>
+    <string name="manual_setup">Manuelles Setup</string>
+    <string name="machine_base_info">Maschinen-Spezifikationen</string>
+    <string name="portafilter_diameter">Siebträger-Durchmesser</string>
+    <string name="integrated_grinder">Integrierte Mühle</string>
+    <string name="steam_wand">Dampflanze</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="weekly_consumption">Wöchentlicher Verbrauch: %d Tassen</string>
+    <string name="maintenance_tracking">Wartung &amp; Pflege</string>
+    <string name="water_filter_replacement">Wasserfilter-Wechsel</string>
+    <string name="descaling">Entkalkung</string>
+    <string name="backflushing">Rückspülen / Reinigung</string>
+    <string name="mark_completed">Als erledigt markieren</string>
+    <string name="overdue_by_days">Überfällig seit %d Tagen</string>
+    <string name="days_remaining">Noch %d Tage verbleibend</string>
+    <string name="reset_machine">Maschine zurücksetzen</string>
+    <string name="setup_machine_ai">Maschine mit KI einrichten</string>
+    <string name="brand">Marke</string>
+    <string name="model">Modell</string>
+    <string name="find_with_ai">Mit KI suchen</string>
+    <string name="ai_fetching_specs">KI lädt Maschinen-Spezifikationen&#8230;</string>
+
+    <!-- Diagnoses -->
+    <string name="diag_balanced">Ausgewogene Extraktion</string>
+    <string name="diag_balanced_desc">Extraktion ist optimal eingestellt. Aktuelle Parameter beibehalten.</string>
+    <string name="diag_channeling">Verdacht auf Channeling</string>
+    <string name="diag_channeling_desc">Fluss deutet auf Kanalbildung hin. Kontaktzeit war lang (%1$.1fs), aber der Shot schmeckt sauer/dünn. Nicht feiner mahlen. Puck-Prep verbessern (WDT Distribution, ebenes Tampen).</string>
+    <string name="diag_severe_under">Starke Unterextraktion</string>
+    <string name="diag_severe_under_desc">Shot lief zu schnell (%1$.1fs). Deutlich feiner mahlen.</string>
+    <string name="diag_mild_under">Leichte Unterextraktion</string>
+    <string name="diag_mild_under_desc">Extraktion war etwas schnell oder sauer. Etwas feiner mahlen.</string>
+    <string name="diag_severe_over">Starke Überextraktion</string>
+    <string name="diag_severe_over_desc">Maschine wurde gewürgt / zu langsam (%1$.1fs). Deutlich gröber mahlen.</string>
+    <string name="diag_mild_over">Leichte Überextraktion</string>
+    <string name="diag_mild_over_desc">Extraktion war etwas langsam oder bitter. Etwas gröber mahlen.</string>
+    <string name="diag_high_strength">Hohe Stärke / Zu Konzentriert</string>
+    <string name="diag_high_strength_desc">Geschmack ist ausgewogen, aber zu intensiv. Yield erhöhen, um Ratio zu verlängern.</string>
+    <string name="diag_low_strength">Geringe Stärke / Wässrig</string>
+    <string name="diag_low_strength_desc">Geschmack ist ausgewogen, aber wässrig. Yield reduzieren, um Ratio zu verkürzen.</string>
+    <string name="diag_inconclusive">Unklare Extraktion</string>
+    <string name="diag_inconclusive_desc">Parameter widersprechen dem geschmacklichen Feedback. Einstellungen beibehalten und Prüf-Shot ziehen.</string>
 </resources>
