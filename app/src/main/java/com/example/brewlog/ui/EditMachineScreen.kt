@@ -121,7 +121,7 @@ fun EditMachineScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Photo Section
-            Text("Maschinen-Foto", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.machine_photo), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,7 +133,7 @@ fun EditMachineScreen(
                     if (photoUri != null) {
                         AsyncImage(
                             model = photoUri,
-                            contentDescription = "Machine Photo",
+                            contentDescription = stringResource(R.string.machine_photo),
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
@@ -142,33 +142,33 @@ fun EditMachineScreen(
                             modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp)
                         ) {
                             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer) {
-                                Icon(Icons.Default.Edit, "Foto ändern", modifier = Modifier.padding(8.dp))
+                                Icon(Icons.Default.Edit, stringResource(R.string.change_photo), modifier = Modifier.padding(8.dp))
                             }
                         }
                     } else {
                         OutlinedButton(onClick = { photoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                             Icon(Icons.Default.AddAPhoto, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Foto hinzufügen")
+                            Text(stringResource(R.string.add_photo))
                         }
                     }
                 }
             }
 
             HorizontalDivider()
-            Text("Spezifikationen", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.specifications), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             OutlinedTextField(value = brand, onValueChange = { brand = it }, label = { Text(stringResource(R.string.brand)) }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text(stringResource(R.string.model)) }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
                 value = consumption, 
                 onValueChange = { consumption = it }, 
-                label = { Text("Wöchentlicher Verbrauch (Tassen)") }, 
+                label = { Text(stringResource(R.string.weekly_consumption_cups)) }, 
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             HorizontalDivider()
-            Text("Hardware", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.hardware), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             OutlinedTextField(
                 value = diameter, 
                 onValueChange = { diameter = it }, 
@@ -186,7 +186,7 @@ fun EditMachineScreen(
             }
 
             HorizontalDivider()
-            Text("Wartungs-Intervalle (Tage)", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.maintenance_intervals_days), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             OutlinedTextField(value = waterDays, onValueChange = { waterDays = it }, label = { Text(stringResource(R.string.water_filter_replacement)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             OutlinedTextField(value = descaleDays, onValueChange = { descaleDays = it }, label = { Text(stringResource(R.string.descaling)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             OutlinedTextField(value = backflushDays, onValueChange = { backflushDays = it }, label = { Text(stringResource(R.string.backflushing)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))

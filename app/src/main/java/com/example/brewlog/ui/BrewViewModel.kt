@@ -2,8 +2,10 @@ package com.example.brewlog.ui
 
 import android.app.Application
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.brewlog.data.BackupData
 import com.example.brewlog.data.BrewDatabase
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.data.EspressoMachine
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.File
 
 enum class SortOption { NAME, RATING }
 
@@ -34,6 +37,11 @@ data class FilterState(
 
 class BrewViewModel(application: Application) : AndroidViewModel(application) {
     private val brewLogDao = BrewDatabase.getDatabase(application).brewLogDao()
+
+    private val jsonFormat = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    }
 
     val sortOption = MutableStateFlow(SortOption.NAME)
     val filterState = MutableStateFlow(FilterState())
@@ -54,18 +62,14 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
                                log.roaster.contains(query, ignoreCase = true)
             
             // 2. Rating Filter
-            // Only apply if log HAS a rating, OR if the filter is still at default (1-10)
             val isRatingFilterModified = filter.ratingRange.start > 1f || filter.ratingRange.endInclusive < 10f
             val matchesRating = if (isRatingFilterModified) {
                 log.hasRating && log.rating.toFloat() in filter.ratingRange
             } else {
-                true // Show everything if filter isn't specifically narrowed
+                true
             }
 
             // 3. Sensory Filters
-            // Logic: If user narrowed a range (e.g. sweetness 4-5), only show logs with that profile enabled.
-            // If range is default (1-5), don't filter out logs missing the profile.
-            
             fun matchesSensory(hasProfile: Boolean, value: Int, range: ClosedFloatingPointRange<Float>): Boolean {
                 val isRangeModified = range.start > 1f || range.endInclusive < 5f
                 return if (isRangeModified) {
@@ -214,33 +218,49 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
     fun saveMachinePhoto(uri: Uri) {
         viewModelScope.launch {
             val context = getApplication<Application>()
-            try {
-                // If it's a content URI, try to take persistable permission
-                if (uri.scheme == "content") {
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
+            val savedUriString = withContext(Dispatchers.IO) {
+                try {
+                    val photoDir = File(context.filesDir, "machine_photos")
+                    if (!photoDir.exists()) {
+                        photoDir.mkdirs()
+                    }
+                    val destinationFile = File(photoDir, "machine_photo_${System.currentTimeMillis()}.jpg")
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        destinationFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    destinationFile.toURI().toString()
+                } catch (e: Exception) {
+                    Log.e("BrewViewModel", "Error copying photo file: ${e.message}", e)
+                    uri.toString()
                 }
-            } catch (e: Exception) {
-                android.util.Log.w("BrewViewModel", "Could not take persistable permission: ${e.message}")
             }
             
             val current = espressoMachine.value ?: EspressoMachine()
-            brewLogDao.insertEspressoMachine(current.copy(photoUri = uri.toString()))
+            brewLogDao.insertEspressoMachine(current.copy(photoUri = savedUriString))
         }
     }
 
     /**
-     * Export all brew logs to a JSON string.
+     * Export all app data (BrewLogs, ShotLogs, EspressoMachine) to a JSON string.
      */
-    suspend fun exportData(): String {
+    suspend fun exportData(): String = withContext(Dispatchers.IO) {
         val logs = _allLogs.first()
-        return Json.encodeToString(logs)
+        val shots = brewLogDao.getAllShotLogsRaw()
+        val machine = brewLogDao.getEspressoMachineOnce()
+        val backup = BackupData(
+            version = 1,
+            brewLogs = logs,
+            shotLogs = shots,
+            espressoMachine = machine
+        )
+        jsonFormat.encodeToString(backup)
     }
 
     /**
-     * Import brew logs from a JSON file URI.
+     * Import app data from a JSON file URI.
+     * Supports full BackupData objects as well as legacy List<BrewLog> JSON files.
      */
     fun importData(uri: Uri) {
         viewModelScope.launch {
@@ -251,18 +271,41 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
                         inputStream.bufferedReader().readText()
                     }
                 }
-                
-                if (jsonString != null) {
-                    val importedLogs: List<BrewLog> = Json.decodeFromString(jsonString)
+
+                if (!jsonString.isNullOrBlank()) {
+                    val content = jsonString
                     withContext(Dispatchers.IO) {
-                        importedLogs.forEach { log ->
-                            // Strip ID to avoid conflicts and let Room generate new ones
-                            brewLogDao.insertLog(log.copy(id = 0))
+                        try {
+                            val backup = jsonFormat.decodeFromString<BackupData>(content)
+                            val oldToNewBeanIds = mutableMapOf<Int, Int>()
+
+                            backup.brewLogs.forEach { log ->
+                                val oldId = log.id
+                                val newId = brewLogDao.insertLog(log.copy(id = 0)).toInt()
+                                if (oldId != 0) {
+                                    oldToNewBeanIds[oldId] = newId
+                                }
+                            }
+
+                            backup.shotLogs.forEach { shot ->
+                                val mappedBeanId = oldToNewBeanIds[shot.beanId] ?: shot.beanId
+                                brewLogDao.insertShotLog(shot.copy(beanId = mappedBeanId))
+                            }
+
+                            backup.espressoMachine?.let { machine ->
+                                brewLogDao.insertEspressoMachine(machine)
+                            }
+                        } catch (_: Exception) {
+                            // Fallback for legacy backups containing only List<BrewLog>
+                            val legacyLogs: List<BrewLog> = jsonFormat.decodeFromString(content)
+                            legacyLogs.forEach { log ->
+                                brewLogDao.insertLog(log.copy(id = 0))
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("BrewViewModel", "Error importing data: ${e.message}", e)
             }
         }
     }

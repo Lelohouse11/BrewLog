@@ -650,7 +650,7 @@ private fun ShotStep(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "sek",
+                        text = stringResource(R.string.seconds_short),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.secondary
                     )

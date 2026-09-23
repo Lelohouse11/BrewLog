@@ -18,7 +18,7 @@ abstract class BrewDatabase : RoomDatabase() {
         fun getDatabase(context: Context): BrewDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, BrewDatabase::class.java, "brew_database")
-                    .fallbackToDestructiveMigration(true)
+                    .fallbackToDestructiveMigrationOnDowngrade(true)
                     .build()
                     .also { Instance = it }
             }

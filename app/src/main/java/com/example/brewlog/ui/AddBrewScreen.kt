@@ -216,11 +216,11 @@ fun AddBrewScreen(
                 if (isScanning) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Spacer(Modifier.width(12.dp))
-                    Text("Etikett scannen...")
+                    Text(stringResource(R.string.scanning_label))
                 } else {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
-                    Text("Kaffee-Etikett scannen (KI)")
+                    Text(stringResource(R.string.scan_label_ai))
                 }
             }
 
@@ -260,7 +260,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasRoastLevel, onCheckedChange = { hasRoastLevel = it })
-                        Text("${stringResource(R.string.roast_level)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.add_roast_level), style = MaterialTheme.typography.bodyMedium)
                     }
                     if (hasRoastLevel) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
@@ -281,7 +281,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasBlendSettings, onCheckedChange = { hasBlendSettings = it })
-                        Text("Blend-Mischung (%) hinzufügen", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.blend_composition_pct), style = MaterialTheme.typography.bodyMedium)
                     }
 
                     if (hasBlendSettings) {
@@ -319,7 +319,7 @@ fun AddBrewScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Gesamt-Prozent:", 
+                                stringResource(R.string.total_percentage), 
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -332,7 +332,7 @@ fun AddBrewScreen(
                         }
                         if (totalPercentage != 100) {
                             Text(
-                                "Summe muss genau 100% ergeben",
+                                stringResource(R.string.blend_must_be_100),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -387,7 +387,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasRating, onCheckedChange = { hasRating = it })
-                        Text("${stringResource(R.string.rating)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.add_rating), style = MaterialTheme.typography.bodyMedium)
                     }
                     if (hasRating) {
                         Text("${stringResource(R.string.rating)}: ${rating.toInt()}/10", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
@@ -407,7 +407,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasSensoryProfile, onCheckedChange = { hasSensoryProfile = it })
-                        Text("${stringResource(R.string.sensory_profile)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.add_sensory_profile), style = MaterialTheme.typography.bodyMedium)
                     }
                     
                     if (hasSensoryProfile) {
@@ -425,7 +425,7 @@ fun AddBrewScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasFlavorTags, onCheckedChange = { hasFlavorTags = it })
-                        Text("${stringResource(R.string.flavor_tags)} hinzufügen", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.add_flavor_tags), style = MaterialTheme.typography.bodyMedium)
                     }
 
                     if (hasFlavorTags) {
@@ -459,7 +459,7 @@ fun AddBrewScreen(
                     onValueChange = { notes = it },
                     label = { Text(stringResource(R.string.notes)) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("z.B. Espresso Röstung, Röstdatum...") },
+                    placeholder = { Text(stringResource(R.string.notes_placeholder)) },
                     minLines = 3,
                     maxLines = 5
                 )

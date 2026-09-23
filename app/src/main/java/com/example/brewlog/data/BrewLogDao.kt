@@ -14,7 +14,7 @@ interface BrewLogDao {
     fun getAllLogs(): Flow<List<BrewLog>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLog(log: BrewLog)
+    suspend fun insertLog(log: BrewLog): Long
 
     @Update
     suspend fun updateLog(log: BrewLog)
@@ -25,6 +25,9 @@ interface BrewLogDao {
     @Query("SELECT shot_logs.*, brew_logs.coffeeName as beanName FROM shot_logs INNER JOIN brew_logs ON shot_logs.beanId = brew_logs.id ORDER BY shot_logs.timestamp DESC")
     fun getAllShotLogsWithBean(): Flow<List<ShotLogWithBean>>
 
+    @Query("SELECT * FROM shot_logs")
+    suspend fun getAllShotLogsRaw(): List<ShotLog>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertShotLog(shotLog: ShotLog)
 
@@ -34,6 +37,9 @@ interface BrewLogDao {
     // Espresso Machine
     @Query("SELECT * FROM espresso_machine WHERE id = 1")
     fun getEspressoMachine(): Flow<EspressoMachine?>
+
+    @Query("SELECT * FROM espresso_machine WHERE id = 1")
+    suspend fun getEspressoMachineOnce(): EspressoMachine?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEspressoMachine(machine: EspressoMachine)

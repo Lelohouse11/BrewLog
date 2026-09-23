@@ -21,6 +21,8 @@
     <string name="next">Next</string>
     <string name="search">Search</string>
     <string name="search_placeholder">Search coffee or roaster&#8230;</string>
+    <string name="import_json">Import JSON</string>
+    <string name="export_json">Export JSON</string>
 
     <!-- Settings & Appearance -->
     <string name="appearance">Appearance</string>
@@ -51,19 +53,29 @@
     <string name="roaster">Roaster</string>
     <string name="origin">Origin</string>
     <string name="roast_level">Roast Level</string>
+    <string name="add_roast_level">Add Roast Level</string>
     <string name="preparation_settings">Preparation Settings</string>
     <string name="single_grams">Single Dose (g)</string>
     <string name="double_grams">Double Dose (g)</string>
     <string name="grind_size">Grind Size</string>
     <string name="sensory_profile">Sensory Profile</string>
+    <string name="add_sensory_profile">Add Sensory Profile</string>
     <string name="sweetness">Sweetness</string>
     <string name="acidity">Acidity</string>
     <string name="body">Body</string>
     <string name="bitterness">Bitterness</string>
     <string name="flavor_tags">Flavor Tags</string>
+    <string name="add_flavor_tags">Add Flavor Tags</string>
     <string name="notes">Notes</string>
+    <string name="notes_placeholder">e.g., Espresso Roast, Roast date&#8230;</string>
     <string name="additional_info">Additional Info</string>
     <string name="rating">Rating</string>
+    <string name="add_rating">Add Rating</string>
+    <string name="scan_label_ai">Scan Coffee Label (AI)</string>
+    <string name="scanning_label">Scanning label&#8230;</string>
+    <string name="blend_composition_pct">Add Blend Composition (%)</string>
+    <string name="total_percentage">Total Percentage:</string>
+    <string name="blend_must_be_100">Total must equal 100%</string>
 
     <!-- Dial-In Steps -->
     <string name="step_setup_title">Setup</string>
@@ -104,6 +116,7 @@
     <string name="target_range_fast">Below Target Time</string>
     <string name="target_range_slow">Above Target Time</string>
     <string name="next_to_result">Next to Evaluation</string>
+    <string name="seconds_short">sec</string>
 
     <!-- Result & Evaluation -->
     <string name="extraction_summary">Extraction Summary</string>
@@ -155,6 +168,7 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="weekly_consumption">Weekly Consumption: %d cups</string>
+    <string name="weekly_consumption_cups">Weekly Consumption (cups)</string>
     <string name="maintenance_tracking">Maintenance Tracking</string>
     <string name="water_filter_replacement">Water Filter Replacement</string>
     <string name="descaling">Descaling</string>
@@ -168,6 +182,12 @@
     <string name="model">Model</string>
     <string name="find_with_ai">Find with AI</string>
     <string name="ai_fetching_specs">AI is fetching machine specs&#8230;</string>
+    <string name="machine_photo">Machine Photo</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="specifications">Specifications</string>
+    <string name="hardware">Hardware</string>
+    <string name="maintenance_intervals_days">Maintenance Intervals (Days)</string>
 
     <!-- Diagnoses -->
     <string name="diag_balanced">Balanced Extraction</string>
