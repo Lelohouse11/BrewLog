@@ -5,46 +5,55 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import com.example.brewlog.data.ThemeMode
 
 /**
- * Monochrome Dark Color Scheme.
- * Uses deep greys and blacks for a sleek, minimal look.
+ * Warm Minimalist Coffee Dark Color Scheme.
+ * Deep espresso roast tones with golden crema amber primary highlights.
  */
 private val DarkColorScheme = darkColorScheme(
-    primary = White,
-    onPrimary = Black,
-    primaryContainer = Grey800,
-    onPrimaryContainer = Grey100,
-    secondary = Grey300,
-    onSecondary = Black,
-    background = DarkGrey,
-    onBackground = Grey200,
-    surface = Grey900,
-    onSurface = Grey100,
-    surfaceVariant = Grey800,
-    onSurfaceVariant = Grey300,
-    outline = Grey500
+    primary = CremaAmber,
+    onPrimary = CoffeeDarkBackground,
+    primaryContainer = CoffeeDarkContainer,
+    onPrimaryContainer = WarmGreyText,
+    secondary = CremaAmberDark,
+    onSecondary = CoffeeDarkBackground,
+    secondaryContainer = CoffeeDarkContainer,
+    onSecondaryContainer = WarmGreyText,
+    tertiary = CremaAmber,
+    onTertiary = CoffeeDarkBackground,
+    background = CoffeeDarkBackground,
+    onBackground = WarmGreyText,
+    surface = CoffeeDarkSurface,
+    onSurface = WarmGreyText,
+    surfaceVariant = CoffeeDarkContainer,
+    onSurfaceVariant = Color(0xFFC7B8AD),
+    outline = CoffeeDarkContainerBorder
 )
 
 /**
- * Monochrome Light Color Scheme.
- * Uses clean whites and light greys.
+ * Warm Minimalist Coffee Light Color Scheme.
+ * Unbleached filter paper off-white background with dark espresso roast primary highlights.
  */
 private val LightColorScheme = lightColorScheme(
-    primary = Black,
-    onPrimary = White,
-    primaryContainer = Grey200,
-    onPrimaryContainer = Grey900,
-    secondary = Grey700,
+    primary = DarkRoastBrown,
+    onPrimary = CoffeeLightBackground,
+    primaryContainer = CoffeeLightContainer,
+    onPrimaryContainer = DarkCharcoalText,
+    secondary = MediumRoastBrown,
     onSecondary = White,
-    background = White,
-    onBackground = Black,
-    surface = Grey100,
-    onSurface = Black,
-    surfaceVariant = Grey200,
-    onSurfaceVariant = Grey700,
-    outline = Grey500
+    secondaryContainer = CoffeeLightContainer,
+    onSecondaryContainer = DarkCharcoalText,
+    tertiary = MediumRoastBrown,
+    onTertiary = White,
+    background = CoffeeLightBackground,
+    onBackground = DarkCharcoalText,
+    surface = CoffeeLightSurface,
+    onSurface = DarkCharcoalText,
+    surfaceVariant = CoffeeLightContainer,
+    onSurfaceVariant = Color(0xFF5C524A),
+    outline = CoffeeLightContainerBorder
 )
 
 @Composable

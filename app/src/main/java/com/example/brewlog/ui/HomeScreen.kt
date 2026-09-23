@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -27,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
+import com.example.brewlog.ui.components.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -177,20 +177,9 @@ fun HomeScreen(
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             if (logs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.Coffee,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outlineVariant
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            stringResource(R.string.no_brews_found),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
+                    CoffeeEmptyState(
+                        title = stringResource(R.string.no_brews_found)
+                    )
                 }
             } else {
                 LazyColumn(
@@ -293,40 +282,17 @@ fun BrewLogItem(
                             QuickStat(Icons.Default.Scale, "${grams}g")
                         }
                         if (log.roastLevel.isNotEmpty()) {
-                            Surface(
-                                color = when(log.roastLevel) {
-                                    "Light" -> Color(0xFFF5E6D3)
-                                    "Dark" -> Color(0xFF4E342E)
-                                    else -> Color(0xFF8D6E63)
-                                },
-                                contentColor = if (log.roastLevel == "Dark") Color.White else Color.Black,
-                                shape = MaterialTheme.shapes.extraSmall
-                            ) {
-                                Text(
-                                    log.roastLevel,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            RoastLevelBadge(roastLevel = log.roastLevel)
                         }
                     }
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     if (log.hasRating) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Text(
-                                text = "${log.rating}/10",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
+                        CoffeeBeanRating(
+                            rating = log.rating,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
                     }
                     IconButton(onClick = onToggleExpand) {
                         Icon(

@@ -20,12 +20,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
+import com.example.brewlog.ui.components.CoffeeEmptyState
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,42 +128,22 @@ fun EspressoMachineScreen(
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (machine == null) {
                 // Empty State
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        Icons.Default.CoffeeMaker, 
-                        contentDescription = null, 
-                        modifier = Modifier.size(100.dp),
-                        tint = MaterialTheme.colorScheme.outlineVariant
-                    )
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        stringResource(R.string.no_machine_title), 
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        stringResource(R.string.no_machine_sub),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                    Spacer(Modifier.height(32.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(onClick = { onNavigateToEdit() }) {
-                            Text(stringResource(R.string.manual_setup))
-                        }
-                        Button(onClick = { showSetupDialog = true }) {
-                            Icon(Icons.Default.AutoAwesome, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.ai_setup))
+                CoffeeEmptyState(
+                    title = stringResource(R.string.no_machine_title),
+                    description = stringResource(R.string.no_machine_sub),
+                    actionButton = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedButton(onClick = { onNavigateToEdit() }) {
+                                Text(stringResource(R.string.manual_setup))
+                            }
+                            Button(onClick = { showSetupDialog = true }) {
+                                Icon(Icons.Default.AutoAwesome, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.ai_setup))
+                            }
                         }
                     }
-                }
+                )
             } else {
                 // Machine Details
                 Column(

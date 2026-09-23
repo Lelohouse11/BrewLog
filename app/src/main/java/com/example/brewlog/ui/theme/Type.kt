@@ -12,9 +12,14 @@ import androidx.compose.ui.unit.sp
  */
 private const val TABULAR_FIGURES = "tnum"
 
+/**
+ * Barista Monospace Font Family used for timers, doses, ratios, and extraction statistics.
+ */
+val BaristaMonospaceFontFamily = FontFamily.Monospace
+
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BaristaMonospaceFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 48.sp,
         lineHeight = 56.sp,
@@ -22,7 +27,7 @@ val Typography = Typography(
         fontFeatureSettings = TABULAR_FIGURES
     ),
     displayMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BaristaMonospaceFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
         lineHeight = 44.sp,
@@ -96,7 +101,7 @@ val Typography = Typography(
         fontFeatureSettings = TABULAR_FIGURES
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BaristaMonospaceFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
@@ -104,7 +109,7 @@ val Typography = Typography(
         fontFeatureSettings = TABULAR_FIGURES
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BaristaMonospaceFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
@@ -112,7 +117,7 @@ val Typography = Typography(
         fontFeatureSettings = TABULAR_FIGURES
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BaristaMonospaceFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,

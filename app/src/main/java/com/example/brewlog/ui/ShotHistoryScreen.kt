@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.R
 import com.example.brewlog.data.ShotLogWithBean
+import com.example.brewlog.ui.components.*
 import com.example.brewlog.util.ExtractionEngine
 import com.example.brewlog.util.getLocalizedDiagnosis
 import com.example.brewlog.util.getLocalizedExplanation
@@ -94,11 +95,9 @@ fun ShotHistoryScreen(
 
             if (filteredLogs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.History, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outlineVariant)
-                        Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.no_shots_logged), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                    }
+                    CoffeeEmptyState(
+                        title = stringResource(R.string.no_shots_logged)
+                    )
                 }
             } else {
                 LazyColumn(
@@ -219,13 +218,20 @@ fun ShotLogCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // Primary Metrics Row
+            // Primary Brew Ratio Bar
+            BrewRatioBar(
+                doseInGrams = shot.doseIn,
+                yieldInGrams = shot.yieldOut,
+                extractionTimeSec = shot.extractionTimeSec
+            )
+
+            Spacer(Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                MetricItem(Icons.Default.Scale, "${"%.1f".format(shot.doseIn)}g → ${"%.1f".format(shot.yieldOut)}g")
-                MetricItem(Icons.Default.Timer, "${"%.1f".format(shot.extractionTimeSec)}s")
                 MetricItem(Icons.Default.Settings, "${stringResource(R.string.grind_size)}: ${"%.1f".format(shot.grindSize)}")
             }
 
