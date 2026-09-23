@@ -11,10 +11,13 @@ import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Scale
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +27,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.BuildConfig
 import com.example.brewlog.R
 import com.example.brewlog.data.ThemeMode
+import java.util.Locale
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,10 +37,14 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel()
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
+    val gramsStepSize by viewModel.gramsStepSize.collectAsState()
+    val grindStepSize by viewModel.grindStepSize.collectAsState()
     val context = LocalContext.current
     
     val showThemeDialog = remember { mutableStateOf(false) }
     val showLanguageDialog = remember { mutableStateOf(false) }
+    val showGramsStepDialog = remember { mutableStateOf(false) }
+    val showGrindStepDialog = remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -85,6 +94,32 @@ fun SettingsScreen(
                     subtitle = langLabel,
                     icon = Icons.Default.Language,
                     onClick = { showLanguageDialog.value = true }
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+
+            item {
+                SettingsSectionHeader("Barista Einstellungen")
+            }
+
+            item {
+                SettingsItem(
+                    title = "Gramm Schrittweite",
+                    subtitle = "${String.format(Locale.ROOT, "%.1f", gramsStepSize)} g",
+                    icon = Icons.Default.Scale,
+                    onClick = { showGramsStepDialog.value = true }
+                )
+            }
+
+            item {
+                SettingsItem(
+                    title = "Mahlgrad Schrittweite",
+                    subtitle = String.format(Locale.ROOT, "%.1f", grindStepSize),
+                    icon = Icons.Default.Tune,
+                    onClick = { showGrindStepDialog.value = true }
                 )
             }
 
@@ -144,6 +179,32 @@ fun SettingsScreen(
             }
         )
     }
+
+    if (showGramsStepDialog.value) {
+        StepSizeSelectionDialog(
+            title = "Gramm Schrittweite wählen",
+            currentValue = gramsStepSize,
+            unit = "g",
+            onDismiss = { showGramsStepDialog.value = false },
+            onSelect = {
+                viewModel.setGramsStepSize(it)
+                showGramsStepDialog.value = false
+            }
+        )
+    }
+
+    if (showGrindStepDialog.value) {
+        StepSizeSelectionDialog(
+            title = "Mahlgrad Schrittweite wählen",
+            currentValue = grindStepSize,
+            unit = "",
+            onDismiss = { showGrindStepDialog.value = false },
+            onSelect = {
+                viewModel.setGrindStepSize(it)
+                showGrindStepDialog.value = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -161,7 +222,7 @@ fun SettingsSectionHeader(title: String) {
 fun SettingsItem(
     title: String,
     subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
     Surface(
@@ -283,4 +344,44 @@ fun LanguageOption(
         RadioButton(selected = selected, onClick = { onSelect(tag) })
         Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp))
     }
+}
+
+@Composable
+fun StepSizeSelectionDialog(
+    title: String,
+    currentValue: Float,
+    unit: String = "",
+    onDismiss: () -> Unit,
+    onSelect: (Float) -> Unit
+) {
+    val options = listOf(0.1f, 0.5f, 1.0f)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                options.forEach { step ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(step) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = abs(currentValue - step) < 0.01f, onClick = { onSelect(step) })
+                        Text(
+                            text = "${String.format(Locale.ROOT, "%.1f", step)} $unit".trim(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }

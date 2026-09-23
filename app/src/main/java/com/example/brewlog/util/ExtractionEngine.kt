@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.example.brewlog.R
 import com.example.brewlog.data.ShotLog
 import kotlin.math.max
+import kotlin.math.round
 
 object ExtractionEngine {
 
@@ -61,7 +62,16 @@ object ExtractionEngine {
         val timeSecParam: Float = 0f
     )
 
-    fun getRecommendation(metrics: ShotMetrics): DialInRecommendation {
+    fun roundToStep(value: Float, stepSize: Float): Float {
+        if (stepSize <= 0f) return value
+        return (round(value / stepSize) * stepSize)
+    }
+
+    fun getRecommendation(
+        metrics: ShotMetrics,
+        grindStepSize: Float = 0.5f,
+        gramsStepSize: Float = 0.5f
+    ): DialInRecommendation {
         // Guard against invalid inputs
         if (metrics.doseIn <= 0f || metrics.timeSec <= 0f) {
             return DialInRecommendation(
@@ -70,8 +80,8 @@ object ExtractionEngine {
                 puckPrepWarning = false,
                 suggestedGrindChange = 0f,
                 suggestedYieldChange = 0f,
-                recommendedGrindSize = metrics.grindSize,
-                recommendedYieldOut = metrics.yieldOut,
+                recommendedGrindSize = roundToStep(metrics.grindSize, grindStepSize),
+                recommendedYieldOut = roundToStep(metrics.yieldOut, gramsStepSize),
                 explanation = "Parameters conflict with sensory feedback. Keep settings and pull a verification shot."
             )
         }
@@ -166,14 +176,17 @@ object ExtractionEngine {
             }
         }
 
+        val rawRecGrind = max(0f, metrics.grindSize + suggestedGrindChange)
+        val rawRecYield = max(metrics.doseIn, metrics.yieldOut + suggestedYieldChange)
+
         return DialInRecommendation(
             type = type,
             diagnosis = diagnosis,
             puckPrepWarning = puckPrepWarning,
             suggestedGrindChange = suggestedGrindChange,
             suggestedYieldChange = suggestedYieldChange,
-            recommendedGrindSize = max(0f, metrics.grindSize + suggestedGrindChange),
-            recommendedYieldOut = max(metrics.doseIn, metrics.yieldOut + suggestedYieldChange),
+            recommendedGrindSize = roundToStep(rawRecGrind, grindStepSize),
+            recommendedYieldOut = roundToStep(rawRecYield, gramsStepSize),
             explanation = explanation,
             timeSecParam = metrics.timeSec
         )

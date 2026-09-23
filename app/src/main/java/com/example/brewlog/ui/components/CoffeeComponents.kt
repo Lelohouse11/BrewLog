@@ -6,6 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -442,7 +445,7 @@ fun SensoryRadarChart(
                 )
             }
 
-            // 3. Level Numbers 1..5 (subtle monospace text next to grid axis, no heavy background box)
+            // 3. Level Numbers 1..5
             for (level in 1..5) {
                 val scale = level / 5.0f
                 val numLayout = textMeasurer.measure(level.toString(), gridNumberStyle)
@@ -603,3 +606,151 @@ private data class BlendVariety(
     val percentage: Int,
     val color: Color
 )
+
+
+
+/**
+ * SCA Flavor Wheel Color Coded Chip for Flavor Notes.
+ */
+@Composable
+fun FlavorTagChip(
+    tag: String,
+    modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    val tagLower = tag.lowercase(Locale.ROOT)
+    val (bgColor, textColor) = when {
+        tagLower.contains("fruch") || tagLower.contains("beere") || tagLower.contains("fruit") || tagLower.contains("berry") ->
+            Color(0xFFF8BBD0) to Color(0xFF880E4F) // Berry Pink
+        tagLower.contains("schoko") || tagLower.contains("kakao") || tagLower.contains("choc") || tagLower.contains("cocoa") ->
+            Color(0xFFD7CCC8) to Color(0xFF3E2723) // Cocoa Brown
+        tagLower.contains("nuss") || tagLower.contains("hazel") || tagLower.contains("nut") || tagLower.contains("almond") ->
+            Color(0xFFEFEBE9) to Color(0xFF4E342E) // Chestnut Brown
+        tagLower.contains("zitr") || tagLower.contains("citrus") || tagLower.contains("lemon") || tagLower.contains("lime") ->
+            Color(0xFFFFF59D) to Color(0xFFF57F17) // Citrus Yellow
+        tagLower.contains("flor") || tagLower.contains("blum") || tagLower.contains("jasmine") || tagLower.contains("rose") ->
+            Color(0xFFE1BEE7) to Color(0xFF4A148C) // Lavender Pink
+        tagLower.contains("süß") || tagLower.contains("sweet") || tagLower.contains("karam") || tagLower.contains("caramel") || tagLower.contains("honig") ->
+            Color(0xFFFFE082) to Color(0xFFE65100) // Golden Caramel
+        tagLower.contains("würz") || tagLower.contains("spice") || tagLower.contains("zimt") || tagLower.contains("cinnamon") ->
+            Color(0xFFFFCCBC) to Color(0xFFBF360C) // Cinnamon Spice
+        else ->
+            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+    }
+
+    Surface(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        shape = RoundedCornerShape(10.dp),
+        color = if (isSelected) textColor else bgColor,
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) textColor else textColor.copy(alpha = 0.3f)
+        ),
+        modifier = modifier
+    ) {
+        Text(
+            text = tag,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = if (isSelected) bgColor else textColor,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        )
+    }
+}
+
+/**
+ * Generic Reusable Number Stepper component with configurable step size.
+ */
+@Composable
+fun NumberStepper(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    stepSize: Float = 0.5f,
+    suffix: String = "",
+    label: String = ""
+) {
+    val currentVal = value.toFloatOrNull() ?: 0f
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedIconButton(
+            onClick = {
+                val newVal = (currentVal - stepSize).coerceAtLeast(0f)
+                val formatted = if (stepSize == 1f) String.format(Locale.ROOT, "%.0f", newVal) else String.format(Locale.ROOT, "%.1f", newVal)
+                onValueChange(formatted)
+            },
+            modifier = Modifier.size(48.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Remove, contentDescription = "Decrease $stepSize")
+        }
+
+        OutlinedTextField(
+            value = value,
+            onValueChange = { onValueChange(it) },
+            label = if (label.isNotEmpty()) { { Text(label) } } else null,
+            suffix = if (suffix.isNotEmpty()) { { Text(suffix) } } else null,
+            singleLine = true,
+            textStyle = TextStyle(
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier.weight(1f)
+        )
+
+        OutlinedIconButton(
+            onClick = {
+                val newVal = currentVal + stepSize
+                val formatted = if (stepSize == 1f) String.format(Locale.ROOT, "%.0f", newVal) else String.format(Locale.ROOT, "%.1f", newVal)
+                onValueChange(formatted)
+            },
+            modifier = Modifier.size(48.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Increase $stepSize")
+        }
+    }
+}
+
+@Composable
+fun GramsStepper(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    stepSize: Float = 0.5f,
+    label: String = "Gramm"
+) {
+    NumberStepper(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        stepSize = stepSize,
+        suffix = "g",
+        label = label
+    )
+}
+
+@Composable
+fun GrindSizeStepper(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    stepSize: Float = 0.5f,
+    label: String = "Mahlgrad"
+) {
+    NumberStepper(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        stepSize = stepSize,
+        suffix = "",
+        label = label
+    )
+}

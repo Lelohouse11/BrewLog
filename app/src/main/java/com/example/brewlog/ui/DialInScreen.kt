@@ -33,6 +33,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.data.ShotLog
+import com.example.brewlog.ui.components.GramsStepper
+import com.example.brewlog.ui.components.GrindSizeStepper
 import com.example.brewlog.util.ExtractionEngine
 import com.example.brewlog.util.getLocalizedDiagnosis
 import com.example.brewlog.util.getLocalizedExplanation
@@ -83,11 +85,18 @@ fun DialInScreen(
     var isRunning by remember { mutableStateOf(false) }
     var timeElapsed by remember { mutableLongStateOf(0L) }
 
+    val hapticFeedback = LocalHapticFeedback.current
+
     LaunchedEffect(isRunning) {
         if (isRunning) {
             val startTime = System.currentTimeMillis() - timeElapsed
+            var hapticFired = false
             while (isRunning) {
                 timeElapsed = System.currentTimeMillis() - startTime
+                if (!hapticFired && timeElapsed >= 25000L) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    hapticFired = true
+                }
                 delay(10.milliseconds)
             }
         }
@@ -100,14 +109,18 @@ fun DialInScreen(
     var bodyEval by remember { mutableIntStateOf(0) }
     var notes by remember { mutableStateOf("") }
 
-    val recommendation = remember(doseIn, grindSize, timeElapsed, yieldOut, acidityEval, bitternessEval, bodyEval) {
+    val settingsViewModel: SettingsViewModel = viewModel()
+    val gramsStepSize by settingsViewModel.gramsStepSize.collectAsState()
+    val grindStepSize by settingsViewModel.grindStepSize.collectAsState()
+
+    val recommendation = remember(doseIn, grindSize, timeElapsed, yieldOut, acidityEval, bitternessEval, bodyEval, grindStepSize, gramsStepSize) {
         val d = doseIn.toFloatOrNull() ?: 0f
         val g = grindSize.toFloatOrNull() ?: 0f
         val t = timeElapsed / 1000f
         val y = yieldOut.toFloatOrNull() ?: 0f
 
         ExtractionEngine.getRecommendation(
-            ExtractionEngine.ShotMetrics(
+            metrics = ExtractionEngine.ShotMetrics(
                 doseIn = d,
                 grindSize = g,
                 timeSec = t,
@@ -127,7 +140,9 @@ fun DialInScreen(
                     1 -> ExtractionEngine.BodyEval.HEAVY
                     else -> ExtractionEngine.BodyEval.OPTIMAL
                 }
-            )
+            ),
+            grindStepSize = grindStepSize,
+            gramsStepSize = gramsStepSize
         )
     }
 
@@ -462,24 +477,25 @@ private fun SetupStep(
 
         Spacer(Modifier.height(16.dp))
 
+        val settingsViewModel: SettingsViewModel = viewModel()
+        val gramsStepSize by settingsViewModel.gramsStepSize.collectAsState()
+        val grindStepSize by settingsViewModel.grindStepSize.collectAsState()
+
         // Inputs for Dose & Grind
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedTextField(
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            GramsStepper(
                 value = doseIn,
                 onValueChange = onDoseChange,
-                enabled = !isRunning,
-                label = { Text(stringResource(R.string.dose_in)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                suffix = { Text("g") }
+                stepSize = gramsStepSize,
+                label = stringResource(R.string.dose_in),
+                modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
+            GrindSizeStepper(
                 value = grindSize,
                 onValueChange = onGrindChange,
-                enabled = !isRunning,
-                label = { Text(stringResource(R.string.grind_size)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                stepSize = grindStepSize,
+                label = stringResource(R.string.grind_size),
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

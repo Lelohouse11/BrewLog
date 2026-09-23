@@ -4,7 +4,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,12 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
+import com.example.brewlog.ui.components.*
 
 val FLAVOR_TAG_OPTIONS = listOf(
     "Chocolate", "Nutty", "Fruity", "Floral", "Caramel",
@@ -34,8 +33,12 @@ fun AddBrewScreen(
     onSave: (BrewLog) -> Unit,
     onNavigateBack: () -> Unit,
     existingLog: BrewLog? = null,
-    geminiViewModel: GeminiViewModel = viewModel()
+    geminiViewModel: GeminiViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel()
 ) {
+    val gramsStepSize by settingsViewModel.gramsStepSize.collectAsState()
+    val grindStepSize by settingsViewModel.grindStepSize.collectAsState()
+
     // Basic Info
     var coffeeName by remember { mutableStateOf(existingLog?.coffeeName ?: "") }
     var roaster by remember { mutableStateOf(existingLog?.roaster ?: "") }
@@ -343,40 +346,32 @@ fun AddBrewScreen(
 
             // --- SECTION 2: PREPARATION SETTINGS ---
             BrewSectionCard(title = stringResource(R.string.preparation_settings), icon = Icons.Default.Settings) {
-                OutlinedTextField(
+                GrindSizeStepper(
                     value = grindSize,
-                    onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.all { it.isDigit() || it == '.' }) {
-                            grindSize = newValue
-                        }
-                    },
-                    label = { Text(stringResource(R.string.grind_size)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    onValueChange = { grindSize = it },
+                    stepSize = grindStepSize,
+                    label = stringResource(R.string.grind_size),
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(16.dp))
                 Text(stringResource(R.string.basket_size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
                 Spacer(Modifier.height(8.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OutlinedTextField(
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    GramsStepper(
                         value = singleGrams,
                         onValueChange = { singleGrams = it },
-                        label = { Text(stringResource(R.string.single_basket)) },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("9.0") },
-                        suffix = { Text("g") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        stepSize = gramsStepSize,
+                        label = stringResource(R.string.single_basket),
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
+                    GramsStepper(
                         value = doubleGrams,
                         onValueChange = { doubleGrams = it },
-                        label = { Text(stringResource(R.string.double_basket)) },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("18.0") },
-                        suffix = { Text("g") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        stepSize = gramsStepSize,
+                        label = stringResource(R.string.double_basket),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -432,19 +427,19 @@ fun AddBrewScreen(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             FLAVOR_TAG_OPTIONS.forEach { tag ->
-                                FilterChip(
-                                    selected = selectedFlavorTags.contains(tag),
+                                FlavorTagChip(
+                                    tag = tag,
+                                    isSelected = selectedFlavorTags.contains(tag),
                                     onClick = {
                                         selectedFlavorTags = if (selectedFlavorTags.contains(tag)) {
                                             selectedFlavorTags - tag
                                         } else {
                                             selectedFlavorTags + tag
                                         }
-                                    },
-                                    label = { Text(tag) }
+                                    }
                                 )
                             }
                         }

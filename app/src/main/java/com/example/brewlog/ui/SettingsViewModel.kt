@@ -22,9 +22,35 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = ThemeMode.SYSTEM
         )
 
+    val gramsStepSize: StateFlow<Float> = repository.gramsStepSize
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0.5f
+        )
+
+    val grindStepSize: StateFlow<Float> = repository.grindStepSize
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0.5f
+        )
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(mode)
+        }
+    }
+
+    fun setGramsStepSize(stepSize: Float) {
+        viewModelScope.launch {
+            repository.setGramsStepSize(stepSize)
+        }
+    }
+
+    fun setGrindStepSize(stepSize: Float) {
+        viewModelScope.launch {
+            repository.setGrindStepSize(stepSize)
         }
     }
 

@@ -361,18 +361,7 @@ fun BrewLogItem(
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 log.flavorTags.forEach { tag ->
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                                    ) {
-                                        Text(
-                                            text = tag,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
+                                    FlavorTagChip(tag = tag)
                                 }
                             }
                         }
