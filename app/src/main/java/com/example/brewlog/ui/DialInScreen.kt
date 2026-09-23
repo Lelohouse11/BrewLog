@@ -1,10 +1,20 @@
 package com.example.brewlog.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +31,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -640,30 +652,110 @@ private fun ShotStep(
             val targetOk = target != null && seconds in target.timeSecRange
             val targetOver = target != null && seconds > target.timeSecRange.endInclusive
 
+            // Pulsing animation when running
+            val infiniteTransition = rememberInfiniteTransition(label = "pulseTransition")
+            val pulseScale by if (isRunning) {
+                infiniteTransition.animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.06f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1000, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "pulseScale"
+                )
+            } else {
+                remember { mutableFloatStateOf(1f) }
+            }
+
+            val pulseAlpha by if (isRunning) {
+                infiniteTransition.animateFloat(
+                    initialValue = 0.2f,
+                    targetValue = 0.6f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1000, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "pulseAlpha"
+                )
+            } else {
+                remember { mutableFloatStateOf(0f) }
+            }
+
+            // Target Reached effect
+            val targetScale by animateFloatAsState(
+                targetValue = if (targetOk) 1.08f else 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                label = "targetScale"
+            )
+
+            val indicatorColor by animateColorAsState(
+                targetValue = when {
+                    targetOk -> MaterialTheme.colorScheme.primary
+                    targetOver -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.secondary
+                },
+                animationSpec = tween(400),
+                label = "indicatorColor"
+            )
+
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(180.dp)
+                    .size(190.dp)
                     .padding(8.dp)
             ) {
+                // Outer pulsing ring when timer is running
+                if (isRunning) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = pulseScale
+                                scaleY = pulseScale
+                                alpha = pulseAlpha
+                            }
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    )
+                }
+
+                // Target reached glow background
+                if (targetOk) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                    )
+                }
+
                 CircularProgressIndicator(
                     progress = { if (timeElapsed > 0) animatedProgress else 0f },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp)
+                        .graphicsLayer {
+                            scaleX = targetScale
+                            scaleY = targetScale
+                        },
                     strokeWidth = 10.dp,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    color = when {
-                        targetOk -> MaterialTheme.colorScheme.primary
-                        targetOver -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.secondary
-                    }
+                    color = indicatorColor
                 )
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = targetScale
+                        scaleY = targetScale
+                    }
+                ) {
                     Text(
                         text = "%.1f".format(seconds),
                         style = MaterialTheme.typography.displayLarge.copy(fontSize = 44.sp),
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (targetOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = stringResource(R.string.seconds_short),

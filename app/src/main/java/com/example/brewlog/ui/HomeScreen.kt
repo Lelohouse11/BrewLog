@@ -4,12 +4,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,6 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,6 +35,7 @@ import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,16 +195,41 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp)
                 ) {
-                    items(logs, key = { it.id }) { log ->
-                        BrewLogItem(
-                            log = log,
-                            isExpanded = expandedLogId == log.id,
-                            onToggleExpand = {
-                                expandedLogId = if (expandedLogId == log.id) null else log.id
-                            },
-                            onDelete = { viewModel.deleteLog(log) },
-                            onEdit = { onNavigateToEditBrew(log.id) }
+                    itemsIndexed(logs, key = { _, item -> item.id }) { index, log ->
+                        var visible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay((index * 40L).coerceAtMost(300L).milliseconds)
+                            visible = true
+                        }
+                        val alpha by animateFloatAsState(
+                            targetValue = if (visible) 1f else 0f,
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            label = "alpha_$index"
                         )
+                        val translateY by animateFloatAsState(
+                            targetValue = if (visible) 0f else 24f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
+                            label = "translateY_$index"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .animateItem()
+                                .graphicsLayer {
+                                    this.alpha = alpha
+                                    this.translationY = translateY
+                                }
+                        ) {
+                            BrewLogItem(
+                                log = log,
+                                isExpanded = expandedLogId == log.id,
+                                onToggleExpand = {
+                                    expandedLogId = if (expandedLogId == log.id) null else log.id
+                                },
+                                onDelete = { viewModel.deleteLog(log) },
+                                onEdit = { onNavigateToEditBrew(log.id) }
+                            )
+                        }
                     }
                 }
             }
@@ -233,12 +266,21 @@ fun BrewLogItem(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
-    val rotation by animateFloatAsState(if (isExpanded) 180f else 0f, label = "rotation")
+    val rotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "rotation"
+    )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .animateContentSize()
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
             .clickable { onToggleExpand() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),

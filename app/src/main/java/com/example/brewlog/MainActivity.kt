@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -139,10 +140,10 @@ class MainActivity : AppCompatActivity() {
                         navController = navController,
                         startDestination = "home",
                         modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-                        enterTransition = { fadeIn(animationSpec = tween(220)) + slideInHorizontally { fullWidth -> fullWidth / 4 } },
-                        exitTransition = { fadeOut(animationSpec = tween(180)) + slideOutHorizontally { fullWidth -> -fullWidth / 4 } },
-                        popEnterTransition = { fadeIn(animationSpec = tween(220)) + slideInHorizontally { fullWidth -> -fullWidth / 4 } },
-                        popExitTransition = { fadeOut(animationSpec = tween(180)) + slideOutHorizontally { fullWidth -> fullWidth / 4 } }
+                        enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 4 } },
+                        exitTransition = { fadeOut(animationSpec = tween(250, easing = FastOutSlowInEasing)) + slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 4 } },
+                        popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 4 } },
+                        popExitTransition = { fadeOut(animationSpec = tween(250, easing = FastOutSlowInEasing)) + slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 4 } }
                     ) {
                         composable("home") {
                             HomeScreen(

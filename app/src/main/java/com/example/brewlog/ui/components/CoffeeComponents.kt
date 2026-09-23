@@ -1,8 +1,13 @@
 package com.example.brewlog.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +16,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,6 +27,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
@@ -118,8 +126,18 @@ fun CoffeeBeanRating(
     ) {
         for (i in 1..5) {
             val isFilled = i <= activeBeans
+            val beanScale by animateFloatAsState(
+                targetValue = if (isFilled) 1.15f else 0.95f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                label = "beanScale_$i"
+            )
             CoffeeBeanIcon(
-                modifier = Modifier.size(beanSize),
+                modifier = Modifier
+                    .size(beanSize)
+                    .graphicsLayer {
+                        scaleX = beanScale
+                        scaleY = beanScale
+                    },
                 color = if (isFilled) activeColor else inactiveColor,
                 isFilled = isFilled
             )
@@ -381,10 +399,31 @@ fun SensoryRadarChart(
     gridColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
     textColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    val sweetVal = (sweetness.coerceIn(1, 5) / 5.0f)
-    val acidVal = (acidity.coerceIn(1, 5) / 5.0f)
-    val bodyVal = (body.coerceIn(1, 5) / 5.0f)
-    val bitterVal = (bitterness.coerceIn(1, 5) / 5.0f)
+    val sweetTarget = (sweetness.coerceIn(1, 5) / 5.0f)
+    val acidTarget = (acidity.coerceIn(1, 5) / 5.0f)
+    val bodyTarget = (body.coerceIn(1, 5) / 5.0f)
+    val bitterTarget = (bitterness.coerceIn(1, 5) / 5.0f)
+
+    val sweetVal by animateFloatAsState(
+        targetValue = sweetTarget,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "sweetAnim"
+    )
+    val acidVal by animateFloatAsState(
+        targetValue = acidTarget,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "acidAnim"
+    )
+    val bodyVal by animateFloatAsState(
+        targetValue = bodyTarget,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "bodyAnim"
+    )
+    val bitterVal by animateFloatAsState(
+        targetValue = bitterTarget,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "bitterAnim"
+    )
 
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = TextStyle(
@@ -674,6 +713,22 @@ fun NumberStepper(
 ) {
     val currentVal = value.toFloatOrNull() ?: 0f
 
+    val minusInteractionSource = remember { MutableInteractionSource() }
+    val minusIsPressed by minusInteractionSource.collectIsPressedAsState()
+    val minusScale by animateFloatAsState(
+        targetValue = if (minusIsPressed) 0.86f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "minusBtnScale"
+    )
+
+    val plusInteractionSource = remember { MutableInteractionSource() }
+    val plusIsPressed by plusInteractionSource.collectIsPressedAsState()
+    val plusScale by animateFloatAsState(
+        targetValue = if (plusIsPressed) 0.86f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "plusBtnScale"
+    )
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -685,8 +740,14 @@ fun NumberStepper(
                 val formatted = if (stepSize == 1f) String.format(Locale.ROOT, "%.0f", newVal) else String.format(Locale.ROOT, "%.1f", newVal)
                 onValueChange(formatted)
             },
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(12.dp)
+            modifier = Modifier
+                .size(48.dp)
+                .graphicsLayer {
+                    scaleX = minusScale
+                    scaleY = minusScale
+                },
+            shape = RoundedCornerShape(12.dp),
+            interactionSource = minusInteractionSource
         ) {
             Icon(Icons.Default.Remove, contentDescription = "Decrease $stepSize")
         }
@@ -711,8 +772,14 @@ fun NumberStepper(
                 val formatted = if (stepSize == 1f) String.format(Locale.ROOT, "%.0f", newVal) else String.format(Locale.ROOT, "%.1f", newVal)
                 onValueChange(formatted)
             },
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(12.dp)
+            modifier = Modifier
+                .size(48.dp)
+                .graphicsLayer {
+                    scaleX = plusScale
+                    scaleY = plusScale
+                },
+            shape = RoundedCornerShape(12.dp),
+            interactionSource = plusInteractionSource
         ) {
             Icon(Icons.Default.Add, contentDescription = "Increase $stepSize")
         }
