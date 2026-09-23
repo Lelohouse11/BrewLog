@@ -2,10 +2,10 @@
     <!-- App & Navigation -->
     <string name="app_name">BrewLog</string>
     <string name="settings">Settings</string>
-    <string name="my_brews">My Brews</string>
+    <string name="my_brews">Beans</string>
     <string name="shot_history">Shot History</string>
     <string name="dial_in_title">Dial-In &amp; Extraction</string>
-    <string name="espresso_machine">My Espresso Machine</string>
+    <string name="espresso_machine">Machine</string>
     <string name="edit_machine">Edit Machine</string>
     <string name="machine_specs">Machine Specifications</string>
     <string name="add_brew">Add Brew</string>

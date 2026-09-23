@@ -5,10 +5,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -17,13 +19,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
@@ -240,10 +240,14 @@ fun BrewLogItem(
             .fillMaxWidth()
             .animateContentSize()
             .clickable { onToggleExpand() },
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isExpanded) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -256,14 +260,14 @@ fun BrewLogItem(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = log.coffeeName,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        lineHeight = 24.sp
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     if (log.roaster.isNotEmpty()) {
                         Text(
                             text = log.roaster,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.Medium
                         )
@@ -274,9 +278,9 @@ fun BrewLogItem(
                     // Quick Stats Row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        QuickStat(Icons.Default.Settings, log.grindSize.toString())
+                        QuickStat(Icons.Default.Settings, "${stringResource(R.string.grind_size)} ${log.grindSize}")
                         if (log.singleGrams > 0 || log.doubleGrams > 0) {
                             val grams = if (log.doubleGrams > 0) log.doubleGrams else log.singleGrams
                             QuickStat(Icons.Default.Scale, "${grams}g")
@@ -291,14 +295,19 @@ fun BrewLogItem(
                     if (log.hasRating) {
                         CoffeeBeanRating(
                             rating = log.rating,
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            beanSize = 14.dp,
+                            modifier = Modifier.padding(bottom = 2.dp)
                         )
                     }
-                    IconButton(onClick = onToggleExpand) {
+                    IconButton(
+                        onClick = onToggleExpand,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             Icons.Default.ExpandMore,
                             contentDescription = null,
-                            modifier = Modifier.rotate(rotation)
+                            modifier = Modifier.rotate(rotation),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -307,75 +316,84 @@ fun BrewLogItem(
             // Expanded Content
             AnimatedVisibility(visible = isExpanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
 
                     // Conditional Blend Composition
                     if (log.hasBlendSettings) {
-                        Text("Blend Composition", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Text(
-                            text = buildString {
-                                val components = mutableListOf<String>()
-                                if (log.arabicaPercentage > 0) components.add("Arabica: ${log.arabicaPercentage}%")
-                                if (log.robustaPercentage > 0) components.add("Robusta: ${log.robustaPercentage}%")
-                                if (log.excelsaPercentage > 0) components.add("Excelsa: ${log.excelsaPercentage}%")
-                                if (log.libericaPercentage > 0) components.add("Liberica: ${log.libericaPercentage}%")
-                                append(components.joinToString(", "))
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        CardSection(title = "Blend Composition") {
+                            BlendCompositionBar(
+                                arabica = log.arabicaPercentage,
+                                robusta = log.robustaPercentage,
+                                excelsa = log.excelsaPercentage,
+                                liberica = log.libericaPercentage
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
 
                     // Conditional Sensory Profile
                     if (log.hasSensoryProfile) {
-                        Text(stringResource(R.string.sensory_profile), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.height(8.dp))
-                        SensoryBar(stringResource(R.string.sweetness), log.sweetness)
-                        SensoryBar(stringResource(R.string.acidity), log.acidity)
-                        SensoryBar(stringResource(R.string.body), log.body)
-                        SensoryBar(stringResource(R.string.bitterness), log.bitterness)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        CardSection(title = stringResource(R.string.sensory_profile)) {
+                            SensoryRadarChart(
+                                sweetness = log.sweetness,
+                                acidity = log.acidity,
+                                body = log.body,
+                                bitterness = log.bitterness,
+                                sweetnessLabel = stringResource(R.string.sweetness),
+                                acidityLabel = stringResource(R.string.acidity),
+                                bodyLabel = stringResource(R.string.body),
+                                bitternessLabel = stringResource(R.string.bitterness)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
 
                     // Conditional Flavor Tags
                     if (log.hasFlavorTags && log.flavorTags.isNotEmpty()) {
-                        Text(stringResource(R.string.flavor_tags), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        FlowRow(
-                            modifier = Modifier.padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            log.flavorTags.forEach { tag ->
-                                SuggestionChip(
-                                    onClick = { },
-                                    label = { Text(tag, style = MaterialTheme.typography.labelSmall) }
-                                )
+                        CardSection(title = stringResource(R.string.flavor_tags)) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                log.flavorTags.forEach { tag ->
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                    ) {
+                                        Text(
+                                            text = tag,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
 
                     // Notes
                     if (log.notes.isNotEmpty()) {
-                        Text(stringResource(R.string.notes), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = MaterialTheme.shapes.small,
-                            tonalElevation = 1.dp
-                        ) {
+                        CardSection(title = stringResource(R.string.notes)) {
                             Text(
                                 text = log.notes,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(12.dp)
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
 
                     // Actions
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -383,22 +401,46 @@ fun BrewLogItem(
                             onClick = onDelete,
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.delete))
+                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelMedium)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Button(
+                        FilledTonalButton(
                             onClick = onEdit,
-                            contentPadding = PaddingValues(horizontal = 24.dp)
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.edit))
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.edit), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CardSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            content()
         }
     }
 }
@@ -411,30 +453,4 @@ fun QuickStat(icon: ImageVector, text: String) {
     }
 }
 
-@Composable
-fun SensoryBar(label: String, value: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.width(90.dp),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium
-        )
-        LinearProgressIndicator(
-            progress = { value / 5f },
-            modifier = Modifier.weight(1f).height(8.dp),
-            strokeCap = StrokeCap.Round,
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-        Text(
-            text = "$value/5",
-            modifier = Modifier.padding(start = 8.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-    }
-}
+

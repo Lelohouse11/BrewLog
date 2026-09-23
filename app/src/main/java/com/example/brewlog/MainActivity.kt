@@ -16,6 +16,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -25,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.work.*
 import com.example.brewlog.ui.AddBrewScreen
+import com.example.brewlog.ui.components.CoffeeBeanIcon
 import com.example.brewlog.ui.BrewViewModel
 import com.example.brewlog.ui.DialInScreen
 import com.example.brewlog.ui.EditMachineScreen
@@ -82,8 +86,8 @@ class MainActivity : AppCompatActivity() {
                                             }
                                         }
                                     },
-                                    icon = { Icon(Icons.Default.Coffee, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.my_brews)) }
+                                    icon = { CoffeeBeanIcon(modifier = Modifier.size(22.dp)) },
+                                    label = { Text(stringResource(R.string.my_brews), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
                                 )
                                 NavigationBarItem(
                                     selected = currentDestination == "dial_in",
@@ -97,7 +101,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     },
                                     icon = { Icon(Icons.Default.Timer, contentDescription = null) },
-                                    label = { Text("Dial-In") }
+                                    label = { Text("Dial-In", maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
                                 )
                                 NavigationBarItem(
                                     selected = currentDestination == "shot_history",
@@ -111,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     },
                                     icon = { Icon(Icons.Default.History, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.shot_history)) }
+                                    label = { Text(stringResource(R.string.shot_history), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
                                 )
                                 NavigationBarItem(
                                     selected = currentDestination == "espresso_machine",
@@ -124,8 +128,8 @@ class MainActivity : AppCompatActivity() {
                                             }
                                         }
                                     },
-                                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.espresso_machine)) }
+                                    icon = { Icon(Icons.Default.CoffeeMaker, contentDescription = null) },
+                                    label = { Text(stringResource(R.string.espresso_machine), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
                                 )
                             }
                         }

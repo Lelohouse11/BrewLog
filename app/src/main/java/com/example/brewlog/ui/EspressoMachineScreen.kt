@@ -26,6 +26,7 @@ import coil.compose.AsyncImage
 import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
 import com.example.brewlog.ui.components.CoffeeEmptyState
+import com.example.brewlog.ui.theme.*
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -301,14 +302,20 @@ fun InfoRow(icon: ImageVector, label: String, value: String, color: Color = Mate
 
 @Composable
 fun MachineSection(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(1.dp), colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             content()
         }
     }
@@ -336,20 +343,27 @@ fun MaintenanceProgressBar(
     val rawProgress = (remainingDays.coerceIn(0, actualIntervalDays).toFloat() / actualIntervalDays)
     val animatedProgress by animateFloatAsState(targetValue = rawProgress, label = "maintenanceProgress")
 
+    val errorColor = MaterialTheme.colorScheme.error
+    val errorBg = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+    val warningColor = CremaAmber
+    val warningBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+    val healthyColor = MaterialTheme.colorScheme.primary
+    val healthyBg = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+
     val (statusColor, statusBg, statusLabel) = when {
         remainingDays <= 0 -> Triple(
-            Color(0xFFC62828),
-            Color(0xFFFFEBEE),
+            errorColor,
+            errorBg,
             if (remainingDays < 0) stringResource(R.string.overdue_by_days, -remainingDays) else "Heute fällig"
         )
         rawProgress <= 0.3f -> Triple(
-            Color(0xFFE65100),
-            Color(0xFFFFF8E1),
+            warningColor,
+            warningBg,
             stringResource(R.string.days_remaining, remainingDays)
         )
         else -> Triple(
-            Color(0xFF2E7D32),
-            Color(0xFFE8F5E9),
+            healthyColor,
+            healthyBg,
             stringResource(R.string.days_remaining, remainingDays)
         )
     }
@@ -370,7 +384,7 @@ fun MaintenanceProgressBar(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(4.dp))
                     Surface(
                         color = statusBg,
                         contentColor = statusColor,
@@ -380,7 +394,7 @@ fun MaintenanceProgressBar(
                             text = statusLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 }
@@ -393,14 +407,14 @@ fun MaintenanceProgressBar(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             LinearProgressIndicator(
                 progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
-                    .clip(MaterialTheme.shapes.small),
+                    .clip(RoundedCornerShape(4.dp)),
                 color = statusColor,
                 trackColor = statusColor.copy(alpha = 0.15f)
             )

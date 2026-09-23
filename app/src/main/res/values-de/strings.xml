@@ -2,10 +2,10 @@
     <!-- App & Navigation -->
     <string name="app_name">BrewLog</string>
     <string name="settings">Einstellungen</string>
-    <string name="my_brews">Meine Kaffees</string>
+    <string name="my_brews">Bohnen</string>
     <string name="shot_history">Shot Historie</string>
     <string name="dial_in_title">Dial-In &amp; Extraktion</string>
-    <string name="espresso_machine">Meine Siebträgermaschine</string>
+    <string name="espresso_machine">Maschine</string>
     <string name="edit_machine">Maschine bearbeiten</string>
     <string name="machine_specs">Maschinen-Spezifikationen</string>
     <string name="add_brew">Kaffee hinzufügen</string>

@@ -167,9 +167,10 @@ fun ShotLogCard(
             .fillMaxWidth()
             .animateContentSize()
             .clickable { isExpanded = !isExpanded },
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header: Bean Name, Date, Basket Badge & Arrow Icon

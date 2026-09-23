@@ -4,24 +4,33 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.brewlog.ui.theme.*
 import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Minimalist Coffee Bean vector icon drawn programmatically via Canvas.
@@ -29,7 +38,7 @@ import java.util.Locale
 @Composable
 fun CoffeeBeanIcon(
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = LocalContentColor.current,
     isFilled: Boolean = true
 ) {
     Canvas(modifier = modifier) {
@@ -349,3 +358,248 @@ fun CoffeeEmptyState(
         }
     }
 }
+
+/**
+ * Custom Canvas-drawn 4-axis Sensory Radar Chart (Sweetness, Acidity, Body, Bitterness).
+ * Subtle, clean level indicators 1..5 and axis labels at outer corners.
+ */
+@Composable
+fun SensoryRadarChart(
+    sweetness: Int,
+    acidity: Int,
+    body: Int,
+    bitterness: Int,
+    modifier: Modifier = Modifier,
+    sweetnessLabel: String = "Sweetness",
+    acidityLabel: String = "Acidity",
+    bodyLabel: String = "Body",
+    bitternessLabel: String = "Bitterness",
+    primaryColor: Color = MaterialTheme.colorScheme.primary,
+    gridColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+    textColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    val sweetVal = (sweetness.coerceIn(1, 5) / 5.0f)
+    val acidVal = (acidity.coerceIn(1, 5) / 5.0f)
+    val bodyVal = (body.coerceIn(1, 5) / 5.0f)
+    val bitterVal = (bitterness.coerceIn(1, 5) / 5.0f)
+
+    val textMeasurer = rememberTextMeasurer()
+    val labelStyle = TextStyle(
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = textColor
+    )
+    val gridNumberStyle = TextStyle(
+        fontSize = 9.sp,
+        fontWeight = FontWeight.Medium,
+        fontFamily = FontFamily.Monospace,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(210.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val radius = minOf(cx, cy) * 0.65f
+
+            val angles = listOf(-PI / 2, 0.0, PI / 2, PI)
+            val values = listOf(sweetVal, acidVal, bodyVal, bitterVal)
+            val labels = listOf(sweetnessLabel, acidityLabel, bodyLabel, bitternessLabel)
+
+            // 1. Grid Webs
+            for (level in 1..5) {
+                val scale = level / 5.0f
+                val gridPath = Path()
+                angles.forEachIndexed { index, angle ->
+                    val r = radius * scale
+                    val x = (cx + r * cos(angle)).toFloat()
+                    val y = (cy + r * sin(angle)).toFloat()
+                    if (index == 0) gridPath.moveTo(x, y) else gridPath.lineTo(x, y)
+                }
+                gridPath.close()
+
+                drawPath(
+                    path = gridPath,
+                    color = if (level == 5) gridColor else gridColor.copy(alpha = 0.25f),
+                    style = Stroke(width = if (level == 5) 1.dp.toPx() else 0.75.dp.toPx())
+                )
+            }
+
+            // 2. Axis Lines
+            angles.forEach { angle ->
+                val x = (cx + radius * cos(angle)).toFloat()
+                val y = (cy + radius * sin(angle)).toFloat()
+                drawLine(
+                    color = gridColor,
+                    start = Offset(cx, cy),
+                    end = Offset(x, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            // 3. Level Numbers 1..5 (subtle monospace text next to grid axis, no heavy background box)
+            for (level in 1..5) {
+                val scale = level / 5.0f
+                val numLayout = textMeasurer.measure(level.toString(), gridNumberStyle)
+                val nh = numLayout.size.height.toFloat()
+
+                val numX = cx + 3.dp.toPx()
+                val numY = cy - (radius * scale) - (nh / 2f)
+
+                drawText(
+                    textLayoutResult = numLayout,
+                    topLeft = Offset(numX, numY)
+                )
+            }
+
+            // 4. Data Polygon
+            val dataPath = Path()
+            angles.forEachIndexed { index, angle ->
+                val r = radius * values[index]
+                val x = (cx + r * cos(angle)).toFloat()
+                val y = (cy + r * sin(angle)).toFloat()
+                if (index == 0) dataPath.moveTo(x, y) else dataPath.lineTo(x, y)
+            }
+            dataPath.close()
+
+            drawPath(
+                path = dataPath,
+                color = primaryColor.copy(alpha = 0.25f)
+            )
+            drawPath(
+                path = dataPath,
+                color = primaryColor,
+                style = Stroke(width = 1.8.dp.toPx(), join = StrokeJoin.Round)
+            )
+
+            // Data Points
+            angles.forEachIndexed { index, angle ->
+                val r = radius * values[index]
+                val x = (cx + r * cos(angle)).toFloat()
+                val y = (cy + r * sin(angle)).toFloat()
+                drawCircle(
+                    color = primaryColor,
+                    radius = 3.5.dp.toPx(),
+                    center = Offset(x, y)
+                )
+            }
+
+            // 5. Corner Attribute Labels
+            angles.forEachIndexed { index, _ ->
+                val labelLayout = textMeasurer.measure(labels[index], labelStyle)
+                val w = labelLayout.size.width.toFloat()
+                val h = labelLayout.size.height.toFloat()
+
+                val x: Float
+                val y: Float
+
+                when (index) {
+                    0 -> { // Top (Sweetness)
+                        x = cx - w / 2f
+                        y = cy - radius - h - 4.dp.toPx()
+                    }
+                    1 -> { // Right (Acidity)
+                        x = cx + radius + 6.dp.toPx()
+                        y = cy - h / 2f
+                    }
+                    2 -> { // Bottom (Body)
+                        x = cx - w / 2f
+                        y = cy + radius + 4.dp.toPx()
+                    }
+                    else -> { // Left (Bitterness)
+                        x = cx - radius - w - 6.dp.toPx()
+                        y = cy - h / 2f
+                    }
+                }
+
+                drawText(
+                    textLayoutResult = labelLayout,
+                    topLeft = Offset(x, y)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Segmented Progress Bar displaying bean blend variety composition.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun BlendCompositionBar(
+    arabica: Int,
+    robusta: Int,
+    modifier: Modifier = Modifier,
+    excelsa: Int = 0,
+    liberica: Int = 0
+) {
+    val total = (arabica + robusta + excelsa + liberica).coerceAtLeast(1)
+
+    val items = listOf(
+        BlendVariety("Arabica", arabica, CremaAmber),
+        BlendVariety("Robusta", robusta, DarkRoastBrown),
+        BlendVariety("Excelsa", excelsa, MediumRoastBrown),
+        BlendVariety("Liberica", liberica, CremaAmberDark)
+    ).filter { it.percentage > 0 }
+
+    if (items.isEmpty()) return
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(10.dp)
+                .clip(RoundedCornerShape(5.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            items.forEach { variety ->
+                val weight = variety.percentage.toFloat() / total.toFloat()
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(weight)
+                        .background(variety.color)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items.forEach { variety ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(variety.color)
+                    )
+                    Text(
+                        text = "${variety.name} ${variety.percentage}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class BlendVariety(
+    val name: String,
+    val percentage: Int,
+    val color: Color
+)
