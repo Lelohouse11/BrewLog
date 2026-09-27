@@ -12,8 +12,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -85,133 +87,184 @@ class MainActivity : AppCompatActivity() {
                 val currentBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = currentBackStackEntry?.destination?.route
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = "home",
-                        modifier = Modifier.fillMaxSize(),
-                        enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 4 } },
-                        exitTransition = { fadeOut(animationSpec = tween(250, easing = FastOutSlowInEasing)) + slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 4 } },
-                        popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 4 } },
-                        popExitTransition = { fadeOut(animationSpec = tween(250, easing = FastOutSlowInEasing)) + slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 4 } }
-                    ) {
-                        composable("home") {
-                            HomeScreen(
-                                viewModel = viewModel,
-                                onNavigateToAddBrew = { navController.navigate("add_brew") },
-                                onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") },
-                                onNavigateToSettings = { navController.navigate("settings") }
-                            )
-                        }
-                        composable("espresso_machine") {
-                            EspressoMachineScreen(
-                                viewModel = viewModel,
-                                onNavigateToEdit = { navController.navigate("edit_machine") },
-                                onNavigateToSettings = { navController.navigate("settings") }
-                            )
-                        }
-                        composable("edit_machine") {
-                            EditMachineScreen(
-                                viewModel = viewModel,
-                                onNavigateBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable("settings") {
-                            SettingsScreen(
-                                onNavigateBack = { navController.popBackStack() },
-                                viewModel = settingsViewModel
-                            )
-                        }
-                        composable("dial_in") {
-                            DialInScreen(
-                                viewModel = viewModel,
-                                onNavigateBack = { navController.popBackStack() },
-                                onNavigateToSettings = { navController.navigate("settings") }
-                            )
-                        }
-                        composable(
-                            route = "dial_in/{beanId}/{basketType}/{dose}/{grind}",
-                            arguments = listOf(
-                                navArgument("beanId") { type = NavType.IntType },
-                                navArgument("basketType") { type = NavType.StringType },
-                                navArgument("dose") { type = NavType.FloatType },
-                                navArgument("grind") { type = NavType.FloatType }
-                            )
-                        ) { backStackEntry ->
-                            DialInScreen(
-                                viewModel = viewModel,
-                                onNavigateBack = { navController.popBackStack() },
-                                onNavigateToSettings = { navController.navigate("settings") },
-                                initialBeanId = backStackEntry.arguments?.getInt("beanId"),
-                                initialBasketType = backStackEntry.arguments?.getString("basketType"),
-                                initialDose = backStackEntry.arguments?.getFloat("dose")?.toDouble(),
-                                initialGrindSize = backStackEntry.arguments?.getFloat("grind")
-                            )
-                        }
-                        composable("shot_history") {
-                            ShotHistoryScreen(
-                                viewModel = viewModel,
-                                onNavigateToDialIn = { beanId, basketType, dose, grind ->
-                                    navController.navigate("dial_in/$beanId/$basketType/${dose.toFloat()}/${grind}")
-                                },
-                                onNavigateToSettings = { navController.navigate("settings") },
-                                onNavigateBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable("add_brew") {
-                            AddBrewScreen(
-                                onSave = {
-                                    viewModel.addLog(it)
-                                    navController.popBackStack()
-                                },
-                                onNavigateBack = { navController.popBackStack() }
-                            )
-                        }
-                        composable(
-                            route = "edit_brew/{logId}",
-                            arguments = listOf(navArgument("logId") { type = NavType.IntType })
-                        ) { backStackEntry ->
-                            val logId = backStackEntry.arguments?.getInt("logId") ?: return@composable
-                            val logs by viewModel.allLogs.collectAsState()
-                            val logToEdit = logs.find { it.id == logId }
-
-                            AddBrewScreen(
-                                onSave = {
-                                    viewModel.updateLog(it)
-                                    navController.popBackStack()
-                                },
-                                onNavigateBack = { navController.popBackStack() },
-                                existingLog = logToEdit
-                            )
-                        }
-                    }
-
-                    if (!showSplashScreen && (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history")) {
-                        FloatingGlassNavigationBar(
-                            currentDestination = currentDestination,
-                            onNavigate = { destination ->
-                                if (currentDestination != destination) {
-                                    navController.navigate(destination) {
-                                        popUpTo("home") { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
+                // Solid background container prevents any gray flashes during transitions
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        NavHost(
+                            navController = navController,
+                            startDestination = "home",
+                            modifier = Modifier.fillMaxSize(),
+                            enterTransition = {
+                                fadeIn(animationSpec = tween(480, easing = FastOutSlowInEasing)) +
+                                scaleIn(initialScale = 0.88f, animationSpec = tween(480, easing = FastOutSlowInEasing)) +
+                                slideInVertically(initialOffsetY = { fullHeight -> fullHeight / 16 }, animationSpec = tween(480, easing = FastOutSlowInEasing))
                             },
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .navigationBarsPadding()
-                        )
-                    }
+                            exitTransition = {
+                                fadeOut(animationSpec = tween(340, easing = FastOutSlowInEasing)) +
+                                scaleOut(targetScale = 0.90f, animationSpec = tween(340, easing = FastOutSlowInEasing))
+                            },
+                            popEnterTransition = {
+                                fadeIn(animationSpec = tween(480, easing = FastOutSlowInEasing)) +
+                                scaleIn(initialScale = 0.88f, animationSpec = tween(480, easing = FastOutSlowInEasing)) +
+                                slideInVertically(initialOffsetY = { fullHeight -> fullHeight / 16 }, animationSpec = tween(480, easing = FastOutSlowInEasing))
+                            },
+                            popExitTransition = {
+                                fadeOut(animationSpec = tween(340, easing = FastOutSlowInEasing)) +
+                                scaleOut(targetScale = 0.90f, animationSpec = tween(340, easing = FastOutSlowInEasing))
+                            }
+                        ) {
+                            composable("home") {
+                                HomeScreen(
+                                    viewModel = viewModel,
+                                    onNavigateToAddBrew = { navController.navigate("add_brew") },
+                                    onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") },
+                                    onNavigateToSettings = { navController.navigate("settings") }
+                                )
+                            }
+                            composable("espresso_machine") {
+                                EspressoMachineScreen(
+                                    viewModel = viewModel,
+                                    onNavigateToEdit = { navController.navigate("edit_machine") }
+                                )
+                            }
+                            composable(
+                                route = "edit_machine",
+                                enterTransition = {
+                                    slideInVertically(initialOffsetY = { fullHeight -> fullHeight / 6 }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                                    fadeIn(animationSpec = tween(280, easing = FastOutSlowInEasing))
+                                },
+                                exitTransition = {
+                                    slideOutVertically(targetOffsetY = { fullHeight -> fullHeight / 6 }, animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                                    fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                                }
+                            ) {
+                                EditMachineScreen(
+                                    viewModel = viewModel,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable("settings") {
+                                SettingsScreen(
+                                    viewModel = settingsViewModel
+                                )
+                            }
+                            composable("dial_in") {
+                                DialInScreen(
+                                    viewModel = viewModel,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(
+                                route = "dial_in/{beanId}/{basketType}/{dose}/{grind}",
+                                arguments = listOf(
+                                    navArgument("beanId") { type = NavType.IntType },
+                                    navArgument("basketType") { type = NavType.StringType },
+                                    navArgument("dose") { type = NavType.FloatType },
+                                    navArgument("grind") { type = NavType.FloatType }
+                                )
+                            ) { backStackEntry ->
+                                DialInScreen(
+                                    viewModel = viewModel,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    initialBeanId = backStackEntry.arguments?.getInt("beanId"),
+                                    initialBasketType = backStackEntry.arguments?.getString("basketType"),
+                                    initialDose = backStackEntry.arguments?.getFloat("dose")?.toDouble(),
+                                    initialGrindSize = backStackEntry.arguments?.getFloat("grind")
+                                )
+                            }
+                            composable("shot_history") {
+                                ShotHistoryScreen(
+                                    viewModel = viewModel,
+                                    onNavigateToDialIn = { beanId, basketType, dose, grind ->
+                                        navController.navigate("dial_in/$beanId/$basketType/${dose.toFloat()}/$grind")
+                                    }
+                                )
+                            }
+                            composable(
+                                route = "add_brew",
+                                enterTransition = {
+                                    slideInVertically(initialOffsetY = { fullHeight -> fullHeight / 6 }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                                    fadeIn(animationSpec = tween(280, easing = FastOutSlowInEasing))
+                                },
+                                exitTransition = {
+                                    slideOutVertically(targetOffsetY = { fullHeight -> fullHeight / 6 }, animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                                    fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                                }
+                            ) {
+                                AddBrewScreen(
+                                    onSave = {
+                                        viewModel.addLog(it)
+                                        navController.popBackStack()
+                                    },
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(
+                                route = "edit_brew/{logId}",
+                                arguments = listOf(navArgument("logId") { type = NavType.IntType }),
+                                enterTransition = {
+                                    slideInVertically(initialOffsetY = { fullHeight -> fullHeight / 6 }, animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                                    fadeIn(animationSpec = tween(280, easing = FastOutSlowInEasing))
+                                },
+                                exitTransition = {
+                                    slideOutVertically(targetOffsetY = { fullHeight -> fullHeight / 6 }, animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                                    fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                                }
+                            ) { backStackEntry ->
+                                val logId = backStackEntry.arguments?.getInt("logId") ?: return@composable
+                                val logs by viewModel.allLogs.collectAsState()
+                                val logToEdit = logs.find { it.id == logId }
 
-                    // Crema Splash & Loading Transition Overlay
-                    AnimatedVisibility(
-                        visible = showSplashScreen,
-                        exit = fadeOut(animationSpec = tween(500, easing = FastOutSlowInEasing))
-                    ) {
-                        CremaSplashScreen(
-                            onSplashFinished = { showSplashScreen = false }
-                        )
+                                AddBrewScreen(
+                                    onSave = {
+                                        viewModel.updateLog(it)
+                                        navController.popBackStack()
+                                    },
+                                    onNavigateBack = { navController.popBackStack() },
+                                    existingLog = logToEdit
+                                )
+                            }
+                        }
+
+                        if (!showSplashScreen && (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history" || currentDestination == "settings")) {
+                            FloatingGlassNavigationBar(
+                                currentDestination = currentDestination,
+                                onNavigate = { destination ->
+                                    if (currentDestination != destination) {
+                                        navController.navigate(destination) {
+                                            popUpTo("home") { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                },
+                                onNavigateToSettings = {
+                                    if (currentDestination != "settings") {
+                                        navController.navigate("settings") {
+                                            popUpTo("home") { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .navigationBarsPadding()
+                            )
+                        }
+
+                        // Crema Splash & Loading Transition Overlay
+                        AnimatedVisibility(
+                            visible = showSplashScreen,
+                            exit = fadeOut(animationSpec = tween(500, easing = FastOutSlowInEasing))
+                        ) {
+                            CremaSplashScreen(
+                                onSplashFinished = { showSplashScreen = false }
+                            )
+                        }
                     }
                 }
             }

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CoffeeMaker
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -34,6 +35,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -63,32 +66,34 @@ import kotlin.math.sin
 fun Modifier.cremaGlow(
     color: Color = CremaAmber,
     borderRadius: Dp = 24.dp,
-    glowRadius: Dp = 6.dp,
-    alpha: Float = 0.25f
+    glowRadius: Dp = 10.dp,
+    alpha: Float = 0.45f
 ): Modifier = this.drawBehind {
     val cornerRadiusPx = borderRadius.toPx()
     val glowRadiusPx = glowRadius.toPx()
+    val strokeWidthPx = 2.dp.toPx()
 
-    for (i in 3 downTo 1) {
-        val spread = glowRadiusPx * (i / 3f)
-        val layerAlpha = (alpha / 3f) * (4 - i)
-        val outlinePath = Path().apply {
+    for (i in 1..6) {
+        val offset = (glowRadiusPx * (i / 6f)) + (strokeWidthPx / 2f)
+        val layerAlpha = (alpha * (1f - (i - 1) / 6f) * 0.45f).coerceIn(0f, 1f)
+
+        val glowPath = Path().apply {
             addRoundRect(
                 RoundRect(
                     rect = Rect(
-                        left = -spread,
-                        top = -spread,
-                        right = size.width + spread,
-                        bottom = size.height + spread
+                        left = -offset,
+                        top = -offset,
+                        right = size.width + offset,
+                        bottom = size.height + offset
                     ),
-                    cornerRadius = CornerRadius(cornerRadiusPx + spread)
+                    cornerRadius = CornerRadius((cornerRadiusPx + offset).coerceAtLeast(0f))
                 )
             )
         }
         drawPath(
-            path = outlinePath,
+            path = glowPath,
             color = color.copy(alpha = layerAlpha),
-            style = Stroke(width = 1.2.dp.toPx())
+            style = Stroke(width = strokeWidthPx)
         )
     }
 }
@@ -116,9 +121,10 @@ fun CremaGlassCard(
         shape = shape,
         color = bgColor,
         border = BorderStroke(1.2.dp, borderColor),
+        shadowElevation = 6.dp,
         modifier = modifier
             .fillMaxWidth()
-            .cremaGlow(color = glowColor, borderRadius = 24.dp, glowRadius = 5.dp, alpha = 0.22f)
+            .cremaGlow(color = glowColor.copy(alpha = 0.35f), borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f)
     ) {
         Column(
             modifier = Modifier.padding(contentPadding),
@@ -253,60 +259,64 @@ fun BaristaMetricBadge(
 fun FloatingGlassNavigationBar(
     currentDestination: String?,
     onNavigate: (String) -> Unit,
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = isAppInDarkTheme()
     val navBg = if (isDark) Color(0xF218120F) else Color(0xF8F0EAE0)
     val navBorder = if (isDark) CremaAmber.copy(alpha = 0.55f) else CremaAmberDark.copy(alpha = 0.55f)
-    val glowColor = if (isDark) CremaAmber else CremaAmberDark
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 16.dp)
             .padding(bottom = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = navBg,
-            border = BorderStroke(1.5.dp, navBorder),
-            shadowElevation = 8.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .cremaGlow(color = glowColor, borderRadius = 28.dp, glowRadius = 8.dp, alpha = 0.35f)
+            border = BorderStroke(1.2.dp, navBorder),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 NavGlassItem(
                     selected = currentDestination == "home",
                     onClick = { onNavigate("home") },
-                    icon = { CoffeeBeanIcon(modifier = Modifier.size(22.dp)) },
+                    icon = { CoffeeBeanIcon(modifier = Modifier.size(20.dp)) },
                     label = "Bohnen"
                 )
                 NavGlassItem(
                     selected = currentDestination == "dial_in",
                     onClick = { onNavigate("dial_in") },
-                    icon = { Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    icon = { Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(20.dp)) },
                     label = "Dial-In"
                 )
                 NavGlassItem(
                     selected = currentDestination == "shot_history",
                     onClick = { onNavigate("shot_history") },
-                    icon = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    icon = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(20.dp)) },
                     label = "Verlauf"
                 )
                 NavGlassItem(
                     selected = currentDestination == "espresso_machine",
                     onClick = { onNavigate("espresso_machine") },
-                    icon = { Icon(Icons.Default.CoffeeMaker, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    icon = { Icon(Icons.Default.CoffeeMaker, contentDescription = null, modifier = Modifier.size(20.dp)) },
                     label = "Maschine"
+                )
+                NavGlassItem(
+                    selected = currentDestination == "settings",
+                    onClick = onNavigateToSettings,
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp)) },
+                    label = "Optionen"
                 )
             }
         }
@@ -985,6 +995,8 @@ fun NumberStepper(
         label = "plusBtnScale"
     )
 
+    val haptic = LocalHapticFeedback.current
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -992,6 +1004,7 @@ fun NumberStepper(
     ) {
         OutlinedIconButton(
             onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 val newVal = (currentVal - stepSize).coerceAtLeast(0f)
                 val formatted = if (stepSize == 1f) String.format(Locale.ROOT, "%.0f", newVal) else String.format(Locale.ROOT, "%.1f", newVal)
                 onValueChange(formatted)
@@ -1014,6 +1027,7 @@ fun NumberStepper(
             label = if (label.isNotEmpty()) { { Text(label) } } else null,
             suffix = if (suffix.isNotEmpty()) { { Text(suffix) } } else null,
             singleLine = true,
+            shape = RoundedCornerShape(14.dp),
             textStyle = TextStyle(
                 fontFamily = BaristaMonospaceFontFamily,
                 fontWeight = FontWeight.Bold,
@@ -1024,6 +1038,7 @@ fun NumberStepper(
 
         OutlinedIconButton(
             onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 val newVal = currentVal + stepSize
                 val formatted = if (stepSize == 1f) String.format(Locale.ROOT, "%.0f", newVal) else String.format(Locale.ROOT, "%.1f", newVal)
                 onValueChange(formatted)

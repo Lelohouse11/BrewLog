@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
@@ -42,7 +41,6 @@ import kotlin.math.abs
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = viewModel(),
     brewViewModel: BrewViewModel = viewModel()
 ) {
@@ -76,183 +74,179 @@ fun SettingsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            item {
-                SettingsSectionHeader(stringResource(R.string.appearance))
-                Spacer(Modifier.height(8.dp))
-                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
-                    val themeLabel = when (themeMode) {
-                        ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
-                        ThemeMode.LIGHT -> stringResource(R.string.theme_light)
-                        ThemeMode.DARK -> stringResource(R.string.theme_dark)
-                    }
-                    SettingsItem(
-                        title = stringResource(R.string.theme),
-                        subtitle = themeLabel,
-                        icon = Icons.Default.Palette,
-                        onClick = { showThemeDialog.value = true }
-                    )
-
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    val currentLang = viewModel.getCurrentLanguageTag()
-                    val langLabel = when {
-                        currentLang.isEmpty() -> stringResource(R.string.language_system)
-                        currentLang.startsWith("de") -> stringResource(R.string.language_de)
-                        currentLang.startsWith("en") -> stringResource(R.string.language_en)
-                        else -> stringResource(R.string.language_system)
-                    }
-                    SettingsItem(
-                        title = stringResource(R.string.language),
-                        subtitle = langLabel,
-                        icon = Icons.Default.Language,
-                        onClick = { showLanguageDialog.value = true }
-                    )
-                }
-            }
-
-            item {
-                SettingsSectionHeader("Barista Einstellungen")
-                Spacer(Modifier.height(8.dp))
-                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
-                    SettingsItem(
-                        title = "Gramm Schrittweite",
-                        subtitle = "${String.format(Locale.ROOT, "%.1f", gramsStepSize)} g",
-                        icon = Icons.Default.Scale,
-                        onClick = { showGramsStepDialog.value = true }
-                    )
-
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    SettingsItem(
-                        title = "Mahlgrad Schrittweite",
-                        subtitle = String.format(Locale.ROOT, "%.1f", grindStepSize),
-                        icon = Icons.Default.Tune,
-                        onClick = { showGrindStepDialog.value = true }
-                    )
-                }
-            }
-
-            item {
-                SettingsSectionHeader("Daten & Sicherung")
-                Spacer(Modifier.height(8.dp))
-                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
-                    SettingsItem(
-                        title = stringResource(R.string.import_json),
-                        subtitle = "Bohnen & Einstellungen aus Datei wiederherstellen",
-                        icon = Icons.Default.FileDownload,
-                        onClick = {
-                            importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    SettingsSectionHeader(stringResource(R.string.appearance))
+                    Spacer(Modifier.height(8.dp))
+                    CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                        val themeLabel = when (themeMode) {
+                            ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                            ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                            ThemeMode.DARK -> stringResource(R.string.theme_dark)
                         }
-                    )
+                        SettingsItem(
+                            title = stringResource(R.string.theme),
+                            subtitle = themeLabel,
+                            icon = Icons.Default.Palette,
+                            onClick = { showThemeDialog.value = true }
+                        )
 
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-                    SettingsItem(
-                        title = stringResource(R.string.export_json),
-                        subtitle = "Bohnen & Einstellungen als JSON exportieren",
-                        icon = Icons.Default.FileUpload,
-                        onClick = {
-                            exportLauncher.launch("brew_settings.json")
+                        val currentLang = viewModel.getCurrentLanguageTag()
+                        val langLabel = when {
+                            currentLang.isEmpty() -> stringResource(R.string.language_system)
+                            currentLang.startsWith("de") -> stringResource(R.string.language_de)
+                            currentLang.startsWith("en") -> stringResource(R.string.language_en)
+                            else -> stringResource(R.string.language_system)
                         }
-                    )
+                        SettingsItem(
+                            title = stringResource(R.string.language),
+                            subtitle = langLabel,
+                            icon = Icons.Default.Language,
+                            onClick = { showLanguageDialog.value = true }
+                        )
+                    }
                 }
-            }
 
-            item {
-                SettingsSectionHeader(stringResource(R.string.about))
-                Spacer(Modifier.height(8.dp))
-                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
-                    SettingsItem(
-                        title = stringResource(R.string.version),
-                        subtitle = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
-                        icon = Icons.Default.Info,
-                        onClick = {}
-                    )
+                item {
+                    SettingsSectionHeader("Barista Einstellungen")
+                    Spacer(Modifier.height(8.dp))
+                    CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                        SettingsItem(
+                            title = "Gramm Schrittweite",
+                            subtitle = "${String.format(Locale.ROOT, "%.1f", gramsStepSize)} g",
+                            icon = Icons.Default.Scale,
+                            onClick = { showGramsStepDialog.value = true }
+                        )
 
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-                    SettingsItem(
-                        title = stringResource(R.string.github_repo),
-                        subtitle = "https://github.com/Lelohouse11/BrewLog",
-                        icon = Icons.AutoMirrored.Filled.Launch,
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, "https://github.com/Lelohouse11/BrewLog".toUri())
-                            try {
-                                context.startActivity(intent)
-                            } catch (_: ActivityNotFoundException) {
+                        SettingsItem(
+                            title = "Mahlgrad Schrittweite",
+                            subtitle = String.format(Locale.ROOT, "%.1f", grindStepSize),
+                            icon = Icons.Default.Tune,
+                            onClick = { showGrindStepDialog.value = true }
+                        )
+                    }
+                }
+
+                item {
+                    SettingsSectionHeader("Daten & Sicherung")
+                    Spacer(Modifier.height(8.dp))
+                    CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                        SettingsItem(
+                            title = stringResource(R.string.import_json),
+                            subtitle = "Bohnen & Einstellungen aus Datei wiederherstellen",
+                            icon = Icons.Default.FileDownload,
+                            onClick = {
+                                importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
                             }
-                        }
-                    )
+                        )
+
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                        SettingsItem(
+                            title = stringResource(R.string.export_json),
+                            subtitle = "Bohnen & Einstellungen als JSON exportieren",
+                            icon = Icons.Default.FileUpload,
+                            onClick = {
+                                exportLauncher.launch("brew_settings.json")
+                            }
+                        )
+                    }
                 }
+
+                item {
+                    SettingsSectionHeader(stringResource(R.string.about))
+                    Spacer(Modifier.height(8.dp))
+                    CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                        SettingsItem(
+                            title = stringResource(R.string.version),
+                            subtitle = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                            icon = Icons.Default.Info,
+                            onClick = {}
+                        )
+
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                        SettingsItem(
+                            title = stringResource(R.string.github_repo),
+                            subtitle = "https://github.com/Lelohouse11/BrewLog",
+                            icon = Icons.AutoMirrored.Filled.Launch,
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, "https://github.com/Lelohouse11/BrewLog".toUri())
+                                try {
+                                    context.startActivity(intent)
+                                } catch (_: ActivityNotFoundException) {
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (showThemeDialog.value) {
+                ThemeSelectionDialog(
+                    currentMode = themeMode,
+                    onDismiss = { showThemeDialog.value = false },
+                    onSelect = {
+                        viewModel.setThemeMode(it)
+                        showThemeDialog.value = false
+                    }
+                )
+            }
+
+            if (showLanguageDialog.value) {
+                LanguageSelectionDialog(
+                    currentTag = viewModel.getCurrentLanguageTag(),
+                    onDismiss = { showLanguageDialog.value = false },
+                    onSelect = {
+                        viewModel.setLanguage(it)
+                        showLanguageDialog.value = false
+                    }
+                )
+            }
+
+            if (showGramsStepDialog.value) {
+                StepSizeSelectionDialog(
+                    title = "Gramm Schrittweite wählen",
+                    currentValue = gramsStepSize,
+                    unit = "g",
+                    onDismiss = { showGramsStepDialog.value = false },
+                    onSelect = {
+                        viewModel.setGramsStepSize(it)
+                        showGramsStepDialog.value = false
+                    }
+                )
+            }
+
+            if (showGrindStepDialog.value) {
+                StepSizeSelectionDialog(
+                    title = "Mahlgrad Schrittweite wählen",
+                    currentValue = grindStepSize,
+                    unit = "",
+                    onDismiss = { showGrindStepDialog.value = false },
+                    onSelect = {
+                        viewModel.setGrindStepSize(it)
+                        showGrindStepDialog.value = false
+                    }
+                )
             }
         }
-    }
-
-    if (showThemeDialog.value) {
-        ThemeSelectionDialog(
-            currentMode = themeMode,
-            onDismiss = { showThemeDialog.value = false },
-            onSelect = {
-                viewModel.setThemeMode(it)
-                showThemeDialog.value = false
-            }
-        )
-    }
-
-    if (showLanguageDialog.value) {
-        LanguageSelectionDialog(
-            currentTag = viewModel.getCurrentLanguageTag(),
-            onDismiss = { showLanguageDialog.value = false },
-            onSelect = {
-                viewModel.setLanguage(it)
-                showLanguageDialog.value = false
-            }
-        )
-    }
-
-    if (showGramsStepDialog.value) {
-        StepSizeSelectionDialog(
-            title = "Gramm Schrittweite wählen",
-            currentValue = gramsStepSize,
-            unit = "g",
-            onDismiss = { showGramsStepDialog.value = false },
-            onSelect = {
-                viewModel.setGramsStepSize(it)
-                showGramsStepDialog.value = false
-            }
-        )
-    }
-
-    if (showGrindStepDialog.value) {
-        StepSizeSelectionDialog(
-            title = "Mahlgrad Schrittweite wählen",
-            currentValue = grindStepSize,
-            unit = "",
-            onDismiss = { showGrindStepDialog.value = false },
-            onSelect = {
-                viewModel.setGrindStepSize(it)
-                showGrindStepDialog.value = false
-            }
-        )
     }
 }
 

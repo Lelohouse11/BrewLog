@@ -182,7 +182,7 @@ fun HomeScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 120.dp)
+                    contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 120.dp)
                 ) {
                     itemsIndexed(logs, key = { _, item -> item.id }) { index, log ->
                         var visible by remember { mutableStateOf(false) }
@@ -201,24 +201,22 @@ fun HomeScreen(
                             label = "translateY_$index"
                         )
 
-                        Box(
+                        BrewLogItem(
+                            log = log,
+                            isExpanded = expandedLogId == log.id,
+                            onToggleExpand = {
+                                expandedLogId = if (expandedLogId == log.id) null else log.id
+                            },
+                            onDelete = { viewModel.deleteLog(log) },
+                            onEdit = { onNavigateToEditBrew(log.id) },
                             modifier = Modifier
                                 .animateItem()
                                 .graphicsLayer {
                                     this.alpha = alpha
                                     this.translationY = translateY
+                                    this.clip = false
                                 }
-                        ) {
-                            BrewLogItem(
-                                log = log,
-                                isExpanded = expandedLogId == log.id,
-                                onToggleExpand = {
-                                    expandedLogId = if (expandedLogId == log.id) null else log.id
-                                },
-                                onDelete = { viewModel.deleteLog(log) },
-                                onEdit = { onNavigateToEditBrew(log.id) }
-                            )
-                        }
+                        )
                     }
                 }
             }
@@ -253,7 +251,8 @@ fun BrewLogItem(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -263,19 +262,22 @@ fun BrewLogItem(
 
     CremaGlassCard(
         onClick = onToggleExpand,
-        modifier = Modifier.animateContentSize(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        )
+        modifier = modifier
     ) {
-        // Specialty Bag Header: Roaster Upper case + Roast Level Badge
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
         ) {
+            // Specialty Bag Header: Roaster Upper case + Roast Level Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             Text(
                 text = log.roaster.ifEmpty { "SPECIALTY ROASTER" }.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
@@ -440,6 +442,7 @@ fun BrewLogItem(
             }
         }
     }
+}
 }
 
 @Composable

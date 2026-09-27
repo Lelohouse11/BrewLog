@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
@@ -59,8 +58,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun DialInScreen(
     viewModel: BrewViewModel = viewModel(),
-    onNavigateBack: () -> Unit,
-    onNavigateToSettings: () -> Unit,
+    onNavigateBack: () -> Unit = {},
     initialBeanId: Int? = null,
     initialBasketType: String? = null,
     initialDose: Double? = null,
@@ -160,28 +158,18 @@ fun DialInScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.dial_in_title), style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
+                .statusBarsPadding()
         ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             // Stepper Header
             DialInStepHeader(
                 currentStep = currentStep,
@@ -293,6 +281,7 @@ fun DialInScreen(
             }
         }
     }
+}
 }
 
 private fun isStepUnlocked(

@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,9 +47,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun ShotHistoryScreen(
     viewModel: BrewViewModel = viewModel(),
-    onNavigateToDialIn: (Int, String, Double, Float) -> Unit,
-    onNavigateToSettings: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateToDialIn: (Int, String, Double, Float) -> Unit
 ) {
     val shotLogs by viewModel.allShotLogs.collectAsState()
     val beans by viewModel.allLogs.collectAsState()
@@ -63,85 +60,69 @@ fun ShotHistoryScreen(
         shotLogs.filter { it.shotLog.beanId == selectedBeanId }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.shot_history), style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            // Filter Bar
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    FilterChip(
-                        selected = selectedBeanId == null,
-                        onClick = { selectedBeanId = null },
-                        shape = RoundedCornerShape(12.dp),
-                        label = { Text(stringResource(R.string.all_beans)) }
-                    )
-                }
-                items(beans) { bean ->
-                    FilterChip(
-                        selected = selectedBeanId == bean.id,
-                        onClick = { selectedBeanId = bean.id },
-                        shape = RoundedCornerShape(12.dp),
-                        label = { Text(bean.coffeeName) }
-                    )
-                }
-            }
-
-            if (filteredLogs.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CoffeeEmptyState(
-                        title = stringResource(R.string.no_shots_logged),
-                        description = "Starte deinen ersten Dial-In Brühvorgang"
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Filter Bar
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(filteredLogs, key = { _, item -> item.shotLog.id }) { index, shotWithBean ->
-                        var visible by remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) {
-                            delay((index * 40L).coerceAtMost(300L).milliseconds)
-                            visible = true
-                        }
-                        val alpha by animateFloatAsState(
-                            targetValue = if (visible) 1f else 0f,
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                            label = "alpha_$index"
+                    item {
+                        FilterChip(
+                            selected = selectedBeanId == null,
+                            onClick = { selectedBeanId = null },
+                            shape = RoundedCornerShape(12.dp),
+                            label = { Text(stringResource(R.string.all_beans)) }
                         )
-                        val translateY by animateFloatAsState(
-                            targetValue = if (visible) 0f else 24f,
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
-                            label = "translateY_$index"
+                    }
+                    items(beans) { bean ->
+                        FilterChip(
+                            selected = selectedBeanId == bean.id,
+                            onClick = { selectedBeanId = bean.id },
+                            shape = RoundedCornerShape(12.dp),
+                            label = { Text(bean.coffeeName) }
                         )
+                    }
+                }
 
-                        Box(
-                            modifier = Modifier
-                                .animateItem()
-                                .graphicsLayer {
-                                    this.alpha = alpha
-                                    this.translationY = translateY
-                                }
-                        ) {
+                if (filteredLogs.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CoffeeEmptyState(
+                            title = stringResource(R.string.no_shots_logged),
+                            description = "Starte deinen ersten Dial-In Brühvorgang"
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 120.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        itemsIndexed(filteredLogs, key = { _, item -> item.shotLog.id }) { index, shotWithBean ->
+                            var visible by remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) {
+                                delay((index * 40L).coerceAtMost(300L).milliseconds)
+                                visible = true
+                            }
+                            val alpha by animateFloatAsState(
+                                targetValue = if (visible) 1f else 0f,
+                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                                label = "alpha_$index"
+                            )
+                            val translateY by animateFloatAsState(
+                                targetValue = if (visible) 0f else 24f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
+                                label = "translateY_$index"
+                            )
+
                             ShotLogCard(
                                 shotWithBean = shotWithBean,
                                 onUseSettingsInDialIn = {
@@ -151,7 +132,14 @@ fun ShotHistoryScreen(
                                         shotWithBean.shotLog.doseIn.toDouble(),
                                         shotWithBean.shotLog.grindSize
                                     )
-                                }
+                                },
+                                modifier = Modifier
+                                    .animateItem()
+                                    .graphicsLayer {
+                                        this.alpha = alpha
+                                        this.translationY = translateY
+                                        this.clip = false
+                                    }
                             )
                         }
                     }
@@ -165,7 +153,8 @@ fun ShotHistoryScreen(
 @Composable
 fun ShotLogCard(
     shotWithBean: ShotLogWithBean,
-    onUseSettingsInDialIn: () -> Unit
+    onUseSettingsInDialIn: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val shot = shotWithBean.shotLog
     val locale = LocalConfiguration.current.locales[0]
@@ -202,19 +191,22 @@ fun ShotLogCard(
 
     CremaGlassCard(
         onClick = { isExpanded = !isExpanded },
-        modifier = Modifier.animateContentSize(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        )
+        modifier = modifier
     ) {
-        // Header: Bean Name, Date, Basket Badge & Arrow Icon
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
         ) {
+            // Header: Bean Name, Date, Basket Badge & Arrow Icon
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = shotWithBean.beanName,
@@ -427,6 +419,7 @@ fun ShotLogCard(
             }
         }
     }
+}
 }
 
 @Composable
