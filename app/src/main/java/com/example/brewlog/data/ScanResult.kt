@@ -11,6 +11,7 @@ data class ScanResult(
     val coffeeName: String = "",
     val roaster: String = "",
     val roastLevel: String = "", // "Light", "Medium", or "Dark"
+    val roastDate: String = "", // "YYYY-MM-DD" format if visible on label, else ""
     
     // Optional details
     val hasSensoryProfile: Boolean = false,

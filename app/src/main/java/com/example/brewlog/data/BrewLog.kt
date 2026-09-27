@@ -16,6 +16,7 @@ data class BrewLog(
     val roaster: String = "",
     val grindSize: Float,
     val roastLevel: String, // "Light", "Medium", "Dark"
+    val roastDate: String = "", // ISO date string "YYYY-MM-DD"
     
     // Optional Sections
     val hasRating: Boolean = false,

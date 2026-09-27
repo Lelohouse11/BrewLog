@@ -12,6 +12,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.brewlog.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -140,7 +143,8 @@ fun CremaGlassCard(
 @Composable
 fun FreshnessBadge(
     roastDateString: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onQuickEditDate: (() -> Unit)? = null
 ) {
     val daysOld = remember(roastDateString) {
         try {
@@ -157,38 +161,39 @@ fun FreshnessBadge(
         daysOld == null -> Triple(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant,
-            "Frisch geröstet"
+            stringResource(R.string.no_roast_date)
         )
         daysOld < 0 -> Triple(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant,
-            "Röstung geplant"
+            stringResource(R.string.planned_roast)
         )
         daysOld in 0..6 -> Triple(
             Color(0x33FFB74D),
             Color(0xFFFFB74D),
-            "Entgasung ($daysOld T)"
+            stringResource(R.string.degassing, daysOld)
         )
         daysOld in 7..30 -> Triple(
             Color(0x3381C784),
             Color(0xFF81C784),
-            "Peak Flavor ($daysOld T)"
+            stringResource(R.string.peak_flavor, daysOld)
         )
         else -> Triple(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant,
-            "Reif ($daysOld T)"
+            stringResource(R.string.aged, daysOld)
         )
     }
 
-    Box(
+    Surface(
+        onClick = { onQuickEditDate?.invoke() },
+        enabled = onQuickEditDate != null,
+        shape = RoundedCornerShape(12.dp),
+        color = badgeBg,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(badgeBg)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
     ) {
         Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -204,6 +209,14 @@ fun FreshnessBadge(
                 color = badgeText,
                 fontWeight = FontWeight.Bold
             )
+            if (onQuickEditDate != null) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.quick_edit_roast_date),
+                    tint = badgeText,
+                    modifier = Modifier.size(11.dp)
+                )
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- App & Navigation -->
     <string name="app_name">BrewLog</string>
     <string name="settings">Einstellungen</string>
@@ -194,6 +194,19 @@
     <string name="recalculated_intervals">Neu berechnete Intervalle</string>
     <string name="cups_per_week">Tassen / Woche</string>
     <string name="days_format">%d Tage</string>
+    <string name="roast_date">Röstdatum</string>
+    <string name="roast_date_placeholder" tools:ignore="TypographyDashes">YYYY-MM-DD (z.B. 2025-02-15)</string>
+    <string name="today">Heute</string>
+    <string name="quick_edit_roast_date">Röstdatum anpassen</string>
+    <string name="quick_edit_roast_date_desc">Trage das Röstdatum deiner Kaffeebohnen ein oder wähle eine Option.</string>
+    <string name="no_roast_date">Kein Röstdatum</string>
+    <string name="days_ago_3">Vor 3 Tagen</string>
+    <string name="days_ago_7">Vor 7 Tagen</string>
+    <string name="degassing">Entgasung (%d T)</string>
+    <string name="peak_flavor">Peak Flavor (%d T)</string>
+    <string name="aged">Reif (%d T)</string>
+    <string name="planned_roast">Röstung geplant</string>
+    <string name="freshness_status">Frische-Status:</string>
 
     <!-- Diagnoses -->
     <string name="diag_balanced">Ausgewogene Extraktion</string>

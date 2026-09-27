@@ -32,6 +32,7 @@ import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -49,6 +50,7 @@ fun HomeScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     var expandedLogId by remember { mutableStateOf<Int?>(null) }
+    var quickEditLog by remember { mutableStateOf<BrewLog?>(null) }
     val showFilters = remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState()
@@ -209,6 +211,7 @@ fun HomeScreen(
                             },
                             onDelete = { viewModel.deleteLog(log) },
                             onEdit = { onNavigateToEditBrew(log.id) },
+                            onQuickEditRoastDate = { quickEditLog = log },
                             modifier = Modifier
                                 .animateItem()
                                 .graphicsLayer {
@@ -241,6 +244,17 @@ fun HomeScreen(
                 )
             }
         }
+
+        if (quickEditLog != null) {
+            QuickEditRoastDateDialog(
+                currentLog = quickEditLog!!,
+                onDismiss = { quickEditLog = null },
+                onConfirm = { updatedDate ->
+                    viewModel.updateLog(quickEditLog!!.copy(roastDate = updatedDate))
+                    quickEditLog = null
+                }
+            )
+        }
     }
 }
 
@@ -252,6 +266,7 @@ fun BrewLogItem(
     onToggleExpand: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
+    onQuickEditRoastDate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val rotation by animateFloatAsState(
@@ -289,7 +304,10 @@ fun BrewLogItem(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FreshnessBadge(roastDateString = log.notes)
+                FreshnessBadge(
+                    roastDateString = log.roastDate,
+                    onQuickEditDate = onQuickEditRoastDate
+                )
                 if (log.roastLevel.isNotEmpty()) {
                     RoastLevelBadge(roastLevel = log.roastLevel)
                 }
@@ -467,4 +485,124 @@ private fun CardSection(
             content()
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuickEditRoastDateDialog(
+    currentLog: BrewLog,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var roastDateText by remember { mutableStateOf(currentLog.roastDate) }
+
+    val isDark = isAppInDarkTheme()
+    val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
+    val glowColor = if (isDark) CremaAmber else CremaAmberDark
+
+    val todayStr = remember { LocalDate.now().toString() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = glassBg,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.cremaGlow(color = glowColor, borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f),
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.quick_edit_roast_date),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    text = "${currentLog.roaster} - ${currentLog.coffeeName}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = stringResource(R.string.quick_edit_roast_date_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = roastDateText,
+                        onValueChange = { roastDateText = it },
+                        label = { Text(stringResource(R.string.roast_date)) },
+                        placeholder = { Text(stringResource(R.string.roast_date_placeholder)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    OutlinedButton(
+                        onClick = { roastDateText = todayStr },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.height(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Today,
+                            contentDescription = stringResource(R.string.today),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.today), fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = stringResource(R.string.freshness_status),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        FreshnessBadge(roastDateString = roastDateText)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(roastDateText.trim()) },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.save), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }

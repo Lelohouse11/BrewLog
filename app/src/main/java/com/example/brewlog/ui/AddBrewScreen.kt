@@ -22,6 +22,7 @@ import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
+import java.time.LocalDate
 
 val FLAVOR_TAG_OPTIONS = listOf(
     "Chocolate", "Nutty", "Fruity", "Floral", "Caramel",
@@ -43,6 +44,7 @@ fun AddBrewScreen(
     // Basic Info
     var coffeeName by remember { mutableStateOf(existingLog?.coffeeName ?: "") }
     var roaster by remember { mutableStateOf(existingLog?.roaster ?: "") }
+    var roastDate by remember { mutableStateOf(existingLog?.roastDate ?: "") }
     var grindSize by remember { mutableStateOf(existingLog?.grindSize?.takeIf { it > 0 }?.toString() ?: "") }
     
     // Optional Sections Toggles
@@ -104,6 +106,10 @@ fun AddBrewScreen(
             if (it.roastLevel.isNotEmpty()) {
                 hasRoastLevel = true
                 roastLevel = it.roastLevel
+            }
+
+            if (it.roastDate.isNotEmpty()) {
+                roastDate = it.roastDate
             }
             
             if (it.hasSensoryProfile) {
@@ -171,6 +177,7 @@ fun AddBrewScreen(
                                 roaster = roaster,
                                 grindSize = grindSize.toFloatOrNull() ?: 0f,
                                 roastLevel = if (hasRoastLevel) roastLevel else "",
+                                roastDate = roastDate,
                                 hasRating = hasRating,
                                 rating = if (hasRating) rating.toInt() else 0,
                                 hasBlendSettings = hasBlendSettings,
@@ -290,6 +297,33 @@ fun AddBrewScreen(
                     modifier = Modifier.fillMaxWidth(),
                     isError = showErrors.value && isRoasterMissing
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = roastDate,
+                        onValueChange = { roastDate = it },
+                        label = { Text(stringResource(R.string.roast_date)) },
+                        placeholder = { Text(stringResource(R.string.roast_date_placeholder)) },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedButton(
+                        onClick = { roastDate = LocalDate.now().toString() },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.height(56.dp)
+                    ) {
+                        Icon(Icons.Default.Today, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.today), fontWeight = FontWeight.Bold)
+                    }
+                }
 
                 Spacer(Modifier.height(12.dp))
 

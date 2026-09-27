@@ -57,6 +57,7 @@ class GeminiViewModel : ViewModel() {
 
                     Optional Roast:
                     - "roastLevel": "Light", "Medium", or "Dark". Only set if clearly identifiable.
+                    - "roastDate": The roast date formatted as "YYYY-MM-DD" if explicitly visible or stamped on the label (e.g. "2025-02-10"), otherwise empty string "".
 
                     Optional Sensory (Only set "hasSensoryProfile": true if sensory notes like acidity, sweetness etc are explicitly described):
                     - "hasSensoryProfile": true/false
