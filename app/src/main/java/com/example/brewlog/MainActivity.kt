@@ -1,19 +1,33 @@
 package com.example.brewlog
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -32,10 +46,13 @@ import com.example.brewlog.ui.SettingsScreen
 import com.example.brewlog.ui.SettingsViewModel
 import com.example.brewlog.ui.ShotHistoryScreen
 import com.example.brewlog.ui.components.FloatingGlassNavigationBar
-import com.example.brewlog.ui.theme.BrewLogTheme
+import com.example.brewlog.ui.components.cremaGlow
+import com.example.brewlog.ui.theme.*
 import com.example.brewlog.util.NotificationHelper
 import com.example.brewlog.worker.MaintenanceReminderWorker
+import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
     private fun scheduleMaintenanceCheck() {
@@ -50,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -59,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val themeMode by settingsViewModel.themeMode.collectAsState()
+            var showSplashScreen by remember { mutableStateOf(true) }
 
             BrewLogTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
@@ -167,7 +186,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    if (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history") {
+                    if (!showSplashScreen && (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history")) {
                         FloatingGlassNavigationBar(
                             currentDestination = currentDestination,
                             onNavigate = { destination ->
@@ -184,7 +203,104 @@ class MainActivity : AppCompatActivity() {
                                 .navigationBarsPadding()
                         )
                     }
+
+                    // Crema Splash & Loading Transition Overlay
+                    AnimatedVisibility(
+                        visible = showSplashScreen,
+                        exit = fadeOut(animationSpec = tween(500, easing = FastOutSlowInEasing))
+                    ) {
+                        CremaSplashScreen(
+                            onSplashFinished = { showSplashScreen = false }
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun CremaSplashScreen(
+    onSplashFinished: () -> Unit
+) {
+    var startAnimation by remember { mutableStateOf(false) }
+    val alphaAnim by animateFloatAsState(
+        targetValue = if (startAnimation) 1f else 0f,
+        animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
+        label = "splashAlpha"
+    )
+    val scaleAnim by animateFloatAsState(
+        targetValue = if (startAnimation) 1f else 0.82f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "splashScale"
+    )
+
+    val isDark = isAppInDarkTheme()
+    val splashBg = if (isDark) CoffeeDarkBackground else CoffeeLightBackground
+
+    LaunchedEffect(Unit) {
+        startAnimation = true
+        delay(1200.milliseconds)
+        onSplashFinished()
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = splashBg
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.graphicsLayer {
+                    alpha = alphaAnim
+                    scaleX = scaleAnim
+                    scaleY = scaleAnim
+                }
+            ) {
+                // Golden Crema Glass Emblem Container
+                Surface(
+                    shape = RoundedCornerShape(32.dp),
+                    color = if (isDark) EspressoGlassBg else VellumGlassBg,
+                    border = BorderStroke(1.5.dp, if (isDark) CremaAmber.copy(0.45f) else CremaAmberDark.copy(0.45f)),
+                    shadowElevation = 12.dp,
+                    modifier = Modifier
+                        .size(120.dp)
+                        .cremaGlow(color = if (isDark) CremaAmber else CremaAmberDark, borderRadius = 32.dp, glowRadius = 12.dp, alpha = 0.35f)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_splash_logo),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Brand Title in Serif Font
+                Text(
+                    text = "BrewLog",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Tagline in Monospace
+                Text(
+                    text = "CRAFT & PRECISION",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = BaristaMonospaceFontFamily,
+                    letterSpacing = 2.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
