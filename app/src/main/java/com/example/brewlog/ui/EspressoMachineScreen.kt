@@ -150,7 +150,7 @@ fun EspressoMachineScreen(
 
                         Box {
                             IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.primary)
                             }
                             DropdownMenu(
                                 expanded = showMenu,

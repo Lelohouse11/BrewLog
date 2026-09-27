@@ -554,7 +554,8 @@ fun RoastLevelBadge(
 }
 
 /**
- * Visual Brew Ratio Indicator Bar displaying dose in, yield out, and calculated ratio.
+ * Visual Brew Ratio Indicator Bar displaying dose in, yield out, calculated ratio,
+ * a visual ratio spectrum bar, and flow rate meter (g/s).
  */
 @Composable
 fun BrewRatioBar(
@@ -566,65 +567,166 @@ fun BrewRatioBar(
     val ratio = if (doseInGrams > 0f) yieldInGrams / doseInGrams else 0f
     val ratioFormatted = String.format(Locale.ROOT, "%.1f", ratio)
 
+    val (ratioCategory, ratioColor) = when {
+        ratio <= 0f -> Pair("-", MaterialTheme.colorScheme.onSurfaceVariant)
+        ratio < 1.5f -> Pair("Ristretto", Color(0xFFFFB74D))
+        ratio in 1.5f..2.5f -> Pair("Espresso (Sweet Spot)", Color(0xFF81C784))
+        else -> Pair("Lungo", Color(0xFF64B5F6))
+    }
+
+    val flowRate = if (extractionTimeSec > 0f) yieldInGrams / extractionTimeSec else 0f
+    val (flowStatus, flowColor) = when {
+        flowRate <= 0f -> Pair("-", MaterialTheme.colorScheme.onSurfaceVariant)
+        flowRate < 1.0f -> Pair("Langsam / Choked", Color(0xFFFFB74D))
+        flowRate in 1.0f..1.9f -> Pair("Ideal", Color(0xFF81C784))
+        else -> Pair("Schnell / Channeling", Color(0xFFE53935))
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column(horizontalAlignment = Alignment.Start) {
-                Text(
-                    text = "IN",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${String.format(Locale.ROOT, "%.1f", doseInGrams)}g",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = BaristaMonospaceFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "RATIO 1:$ratioFormatted",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = BaristaMonospaceFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (extractionTimeSec > 0f) {
+            // Header Row: IN / RATIO / OUT
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(horizontalAlignment = Alignment.Start) {
                     Text(
-                        text = "${extractionTimeSec.toInt()}s",
+                        text = "IN",
                         style = MaterialTheme.typography.labelSmall,
-                        fontFamily = BaristaMonospaceFontFamily,
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${String.format(Locale.ROOT, "%.1f", doseInGrams)}g",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontFamily = BaristaMonospaceFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "RATIO 1:$ratioFormatted",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = BaristaMonospaceFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = ratioCategory,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ratioColor
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "OUT",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${String.format(Locale.ROOT, "%.1f", yieldInGrams)}g",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontFamily = BaristaMonospaceFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "OUT",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${String.format(Locale.ROOT, "%.1f", yieldInGrams)}g",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = BaristaMonospaceFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            // Visual Ratio Spectrum Bar
+            val normalizedRatioProgress = ((ratio - 1.0f) / 2.0f).coerceIn(0f, 1f)
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                val totalWidth = maxWidth
+                val markerX = totalWidth * normalizedRatioProgress
+
+                // Background Spectrum
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.weight(0.25f).fillMaxHeight().background(Color(0xFFFFB74D).copy(alpha = 0.35f)))
+                    Box(modifier = Modifier.weight(0.50f).fillMaxHeight().background(Color(0xFF81C784).copy(alpha = 0.45f)))
+                    Box(modifier = Modifier.weight(0.25f).fillMaxHeight().background(Color(0xFF64B5F6).copy(alpha = 0.35f)))
+                }
+                // Marker Pin
+                if (ratio > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = markerX - 3.dp)
+                            .width(6.dp)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                }
+            }
+
+            // Flow Rate Indicator (if time available)
+            if (extractionTimeSec > 0f) {
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "${extractionTimeSec.toInt()}s",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = BaristaMonospaceFontFamily,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "FLUSS:",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Surface(
+                            color = flowColor.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(0.5.dp, flowColor.copy(alpha = 0.4f))
+                        ) {
+                            Text(
+                                text = "${String.format(Locale.ROOT, "%.1f", flowRate)} g/s • $flowStatus",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = BaristaMonospaceFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = flowColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

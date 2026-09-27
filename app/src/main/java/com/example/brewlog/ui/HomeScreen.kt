@@ -41,8 +41,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun HomeScreen(
     viewModel: BrewViewModel,
     onNavigateToAddBrew: () -> Unit,
-    onNavigateToEditBrew: (Int) -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToEditBrew: (Int) -> Unit
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
@@ -131,10 +130,6 @@ fun HomeScreen(
 
                         IconButton(onClick = { showFilters.value = true }) {
                             Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                        }
-
-                        IconButton(onClick = onNavigateToSettings) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                         }
                     }
                 }
@@ -226,9 +221,14 @@ fun HomeScreen(
         }
 
         if (showFilters.value) {
+            val sheetBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
             ModalBottomSheet(
                 onDismissRequest = { showFilters.value = false },
-                sheetState = sheetState
+                sheetState = sheetState,
+                containerColor = sheetBg,
+                scrimColor = Color.Black.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
             ) {
                 FilterBottomSheet(
                     sortOption = sortOption,

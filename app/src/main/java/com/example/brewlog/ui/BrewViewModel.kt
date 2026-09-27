@@ -150,6 +150,12 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteShotLog(shotLog: ShotLog) {
+        viewModelScope.launch {
+            brewLogDao.deleteShotLog(shotLog)
+        }
+    }
+
     fun updateBeanFromRecommendation(
         beanId: Int,
         basketType: String,

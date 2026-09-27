@@ -45,6 +45,8 @@
     <string name="add_first_brew">Tap + to add your first coffee bean!</string>
     <string name="delete_coffee_confirm_title">Delete Coffee</string>
     <string name="delete_coffee_confirm_msg">Are you sure you want to delete "%s"? This cannot be undone.</string>
+    <string name="delete_shot_confirm_title">Delete Shot Log</string>
+    <string name="delete_shot_confirm_msg">Are you sure you want to delete this shot log from your history?</string>
     <string name="dial_in_button">Dial-In</string>
 
     <!-- Add / Edit Brew Screen -->

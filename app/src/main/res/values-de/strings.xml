@@ -45,6 +45,8 @@
     <string name="add_first_brew">Tippe auf +, um deinen ersten Kaffee hinzuzufügen!</string>
     <string name="delete_coffee_confirm_title">Kaffee löschen</string>
     <string name="delete_coffee_confirm_msg">Bist du sicher, dass du "%s" löschen möchtest? Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="delete_shot_confirm_title">Bezug löschen</string>
+    <string name="delete_shot_confirm_msg">Möchtest du diesen getrackten Bezug wirklich aus dem Verlauf löschen?</string>
     <string name="dial_in_button">Dial-In</string>
 
     <!-- Add / Edit Brew Screen -->

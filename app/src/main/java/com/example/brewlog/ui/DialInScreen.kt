@@ -276,7 +276,7 @@ fun DialInScreen(
                             onBackClick = { currentStep = 1 }
                         )
                     }
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(130.dp))
                 }
             }
         }
@@ -522,44 +522,68 @@ private fun SetupStep(
         }
     }
 
-    // Target Info Box
+    // Target Info Box with Visual Ratio Bar
     target?.let { t ->
+        val doseVal = doseIn.toFloatOrNull() ?: 1f
+
         CremaGlassCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Tune,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.target_params),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(stringResource(R.string.target_yield), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    Text("${"%.1f".format(t.yieldOut)} g", style = MaterialTheme.typography.titleMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.target_params),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                Column {
-                    Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    Text("${t.timeSecRange.start.toInt()} - ${t.timeSecRange.endInclusive.toInt()} s", style = MaterialTheme.typography.titleMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
-                }
-                Column {
-                    Text(stringResource(R.string.target_ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    val doseVal = doseIn.toFloatOrNull() ?: 1f
-                    val ratioVal = if (doseVal > 0) t.yieldOut / doseVal else 2f
-                    Text("1 : ${"%.1f".format(ratioVal)}", style = MaterialTheme.typography.titleMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+
+                Surface(
+                    color = if (t.isFromHistory) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (t.isFromHistory) Icons.Default.Star else Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = if (t.isFromHistory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = if (t.isFromHistory) "Bohnen-Historie" else "Standard-Rezept",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (t.isFromHistory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
-            Spacer(Modifier.height(8.dp))
+
+            Spacer(Modifier.height(14.dp))
+
+            // Visual Brew Ratio Bar for Target
+            BrewRatioBar(
+                doseInGrams = doseVal,
+                yieldInGrams = t.yieldOut,
+                extractionTimeSec = (t.timeSecRange.start + t.timeSecRange.endInclusive) / 2f
+            )
+
+            Spacer(Modifier.height(10.dp))
+
             Text(
                 text = if (t.isFromHistory) stringResource(R.string.target_history_hint) else stringResource(R.string.target_default_hint),
                 style = MaterialTheme.typography.bodySmall,
@@ -902,36 +926,14 @@ private fun ResultStep(
     val y = yieldOut.toFloatOrNull() ?: 0f
     val t = timeElapsed / 1000f
 
-    // Shot Summary Card
-    CremaGlassCard {
-        Text(stringResource(R.string.extraction_summary), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text("In / Out", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                Text("${"%.1f".format(d)}g / ${"%.1f".format(y)}g", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
-            }
-            Column {
-                Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                Text("${"%.1f".format(t)} s", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
-            }
-            Column {
-                Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                val ratio = if (d > 0) y / d else 0f
-                Text("1 : ${"%.1f".format(ratio)}", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
-            }
-            Column {
-                Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                val flow = if (t > 0) y / t else 0f
-                Text("${"%.1f".format(flow)} g/s", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
+    // Shot Summary Card with Visual Ratio & Flow Bar
+    BrewRatioBar(
+        doseInGrams = d,
+        yieldInGrams = y,
+        extractionTimeSec = t
+    )
 
-    // Sensory Evaluation
+    // Sensory Evaluation (Text / Buttons kept intact)
     CremaGlassCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.ThumbUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
@@ -995,27 +997,64 @@ private fun ResultStep(
             HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
             Spacer(Modifier.height(12.dp))
 
-            Text(stringResource(R.string.recommended_adjustments), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.recommended_adjustments),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            Spacer(Modifier.height(8.dp))
 
-            if (recommendation.suggestedGrindChange != 0f) {
-                val direction = if (recommendation.suggestedGrindChange > 0)
-                    stringResource(R.string.grind_direction_coarser)
-                else
-                    stringResource(R.string.grind_direction_finer)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (recommendation.suggestedGrindChange != 0f) {
+                    val direction = if (recommendation.suggestedGrindChange > 0)
+                        stringResource(R.string.grind_direction_coarser)
+                    else
+                        stringResource(R.string.grind_direction_finer)
 
-                Text(
-                    stringResource(R.string.adjust_grind, direction, recommendation.recommendedGrindSize, grindSize),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            if (recommendation.suggestedYieldChange != 0f) {
-                Text(
-                    stringResource(R.string.adjust_yield, recommendation.recommendedYieldOut, yieldOut),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
-                )
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(stringResource(R.string.grind_size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = "$grindSize ➔ ${recommendation.recommendedGrindSize} ($direction)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = BaristaMonospaceFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                if (recommendation.suggestedYieldChange != 0f) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(stringResource(R.string.yield_out), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = "$yieldOut g ➔ ${recommendation.recommendedYieldOut} g",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = BaristaMonospaceFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             }
         }
     }

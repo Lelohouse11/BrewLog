@@ -3,10 +3,12 @@ package com.example.brewlog.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,8 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.brewlog.R
-import com.example.brewlog.ui.theme.BaristaMonospaceFontFamily
+import com.example.brewlog.ui.components.CremaGlassCard
+import com.example.brewlog.ui.theme.*
 
 private val ROAST_OPTIONS = listOf("Light", "Medium", "Dark")
 private val FLAVOR_OPTIONS = listOf(
@@ -34,52 +38,81 @@ fun FilterBottomSheet(
     onReset: () -> Unit,
     onApply: () -> Unit
 ) {
+    val activeFilterCount = (if (filterState.selectedRoasts.isNotEmpty()) 1 else 0) +
+            (if (filterState.selectedFlavorTags.isNotEmpty()) 1 else 0) +
+            (if (filterState.ratingRange != 1f..10f) 1 else 0) +
+            (if (filterState.sweetnessRange != 1f..5f || filterState.acidityRange != 1f..5f || filterState.bodyRange != 1f..5f || filterState.bitternessRange != 1f..5f) 1 else 0)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Top Header Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                stringResource(R.string.filters),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = onReset) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(
+                    imageVector = Icons.Default.FilterAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    stringResource(R.string.filters),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (activeFilterCount > 0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = CircleShape
+                    ) {
+                        Text(
+                            text = "$activeFilterCount",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            TextButton(
+                onClick = onReset,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
+            ) {
                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.reset_all), style = MaterialTheme.typography.labelMedium)
             }
         }
 
         // Sorting Section
-        FilterSection(title = stringResource(R.string.sort_by)) {
+        CremaGlassFilterCard(title = stringResource(R.string.sort_by)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
+                CremaFilterChip(
                     selected = sortOption == SortOption.NAME,
                     onClick = { onSortChange(SortOption.NAME) },
-                    label = { Text(stringResource(R.string.sort_name)) },
-                    shape = RoundedCornerShape(12.dp),
-                    leadingIcon = if (sortOption == SortOption.NAME) { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
+                    label = stringResource(R.string.sort_name)
                 )
-                FilterChip(
+                CremaFilterChip(
                     selected = sortOption == SortOption.RATING,
                     onClick = { onSortChange(SortOption.RATING) },
-                    label = { Text(stringResource(R.string.sort_rating)) },
-                    shape = RoundedCornerShape(12.dp),
-                    leadingIcon = if (sortOption == SortOption.RATING) { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
+                    label = stringResource(R.string.sort_rating)
                 )
             }
         }
 
         // Rating Range
-        FilterSection(title = stringResource(R.string.rating_range)) {
+        CremaGlassFilterCard(title = stringResource(R.string.rating_range)) {
             FilterRangeSlider(
                 label = stringResource(R.string.rating),
                 value = filterState.ratingRange,
@@ -90,8 +123,8 @@ fun FilterBottomSheet(
         }
 
         // Sensory Profile
-        FilterSection(title = stringResource(R.string.sensory_profile)) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        CremaGlassFilterCard(title = stringResource(R.string.sensory_profile)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilterRangeSlider(stringResource(R.string.sweetness), filterState.sweetnessRange, 1f..5f, 3) { onFilterChange(filterState.copy(sweetnessRange = it)) }
                 FilterRangeSlider(stringResource(R.string.acidity), filterState.acidityRange, 1f..5f, 3) { onFilterChange(filterState.copy(acidityRange = it)) }
                 FilterRangeSlider(stringResource(R.string.body), filterState.bodyRange, 1f..5f, 3) { onFilterChange(filterState.copy(bodyRange = it)) }
@@ -100,10 +133,13 @@ fun FilterBottomSheet(
         }
 
         // Roast Level
-        FilterSection(title = stringResource(R.string.roast_level)) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        CremaGlassFilterCard(title = stringResource(R.string.roast_level)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 ROAST_OPTIONS.forEach { roast ->
-                    FilterChip(
+                    CremaFilterChip(
                         selected = filterState.selectedRoasts.contains(roast),
                         onClick = {
                             val newSet = if (filterState.selectedRoasts.contains(roast)) {
@@ -113,18 +149,20 @@ fun FilterBottomSheet(
                             }
                             onFilterChange(filterState.copy(selectedRoasts = newSet))
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        label = { Text(roast) }
+                        label = roast
                     )
                 }
             }
         }
 
         // Flavor Tags
-        FilterSection(title = stringResource(R.string.flavor_tags)) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CremaGlassFilterCard(title = stringResource(R.string.flavor_tags)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 FLAVOR_OPTIONS.forEach { tag ->
-                    FilterChip(
+                    CremaFilterChip(
                         selected = filterState.selectedFlavorTags.contains(tag),
                         onClick = {
                             val newSet = if (filterState.selectedFlavorTags.contains(tag)) {
@@ -134,23 +172,26 @@ fun FilterBottomSheet(
                             }
                             onFilterChange(filterState.copy(selectedFlavorTags = newSet))
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        label = { Text(tag) }
+                        label = tag
                     )
                 }
             }
         }
 
+        Spacer(Modifier.height(4.dp))
+
         Button(
             onClick = onApply,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            Text(stringResource(R.string.apply_filters), fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.apply_filters), fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -158,16 +199,63 @@ fun FilterBottomSheet(
 }
 
 @Composable
-fun FilterSection(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = title, 
-            style = MaterialTheme.typography.titleMedium, 
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        content()
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+private fun CremaGlassFilterCard(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    CremaGlassCard(
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = title, 
+                style = MaterialTheme.typography.titleSmall, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            content()
+        }
+    }
+}
+
+@Composable
+fun CremaFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+        ),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (selected) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 
@@ -187,7 +275,7 @@ fun FilterRangeSlider(
         ) {
             Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
             ) {
@@ -206,7 +294,12 @@ fun FilterRangeSlider(
             onValueChange = onValueChange,
             valueRange = valueRange,
             steps = steps,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 2.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         )
     }
 }

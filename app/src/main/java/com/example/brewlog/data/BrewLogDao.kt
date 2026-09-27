@@ -31,6 +31,9 @@ interface BrewLogDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertShotLog(shotLog: ShotLog)
 
+    @Delete
+    suspend fun deleteShotLog(shotLog: ShotLog)
+
     @Query("SELECT * FROM shot_logs WHERE beanId = :beanId AND basketType = :basketType AND acidityEval = 0 AND bitternessEval = 0 AND bodyEval = 0 ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLatestBalancedShot(beanId: Int, basketType: String): ShotLog?
 
