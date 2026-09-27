@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +28,7 @@ import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
 import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
+import com.example.brewlog.util.MaintenanceCalculator
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +44,7 @@ fun EspressoMachineScreen(
     val scanError by geminiViewModel.errorMessage.collectAsState()
 
     var showSetupDialog by remember { mutableStateOf(false) }
+    var showQuickEditDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     
     // Setup form state
@@ -230,11 +233,28 @@ fun EspressoMachineScreen(
 
                     Spacer(Modifier.height(4.dp))
 
-                    Text(
-                        stringResource(R.string.weekly_consumption, machine?.weeklyConsumption ?: 0),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.weekly_consumption, machine?.weeklyConsumption ?: 0),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        IconButton(
+                            onClick = { showQuickEditDialog = true },
+                            modifier = Modifier
+                                .padding(start = 4.dp)
+                                .size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = stringResource(R.string.quick_edit_consumption),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
@@ -364,6 +384,17 @@ fun EspressoMachineScreen(
                 }
             )
         }
+
+        if (showQuickEditDialog && machine != null) {
+            QuickEditConsumptionDialog(
+                machine = machine!!,
+                onDismiss = { showQuickEditDialog = false },
+                onConfirm = { newConsumption ->
+                    viewModel.updateWeeklyConsumption(newConsumption)
+                    showQuickEditDialog = false
+                }
+            )
+        }
     }
 }
 }
@@ -474,6 +505,231 @@ fun MaintenanceProgressBar(
                     .clip(RoundedCornerShape(4.dp)),
                 color = statusColor,
                 trackColor = statusColor.copy(alpha = 0.15f)
+            )
+        }
+    }
+}
+
+@Composable
+fun QuickEditConsumptionDialog(
+    machine: EspressoMachine,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var consumptionText by remember { mutableStateOf(machine.weeklyConsumption.toString()) }
+    val currentWeekly = machine.weeklyConsumption
+    val newWeekly = consumptionText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+
+    val isDark = isAppInDarkTheme()
+    val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
+    val glowColor = if (isDark) CremaAmber else CremaAmberDark
+
+    // Live recalculation preview
+    val previewMachine = remember(machine, newWeekly) {
+        MaintenanceCalculator.updateWeeklyConsumption(machine, newWeekly)
+    }
+
+    val currentWaterDays = MaintenanceCalculator.calculateEffectiveIntervalDays(
+        machine.waterFilterIntervalDays, machine.waterFilterLimitCycles, currentWeekly
+    )
+    val newWaterDays = MaintenanceCalculator.calculateEffectiveIntervalDays(
+        previewMachine.waterFilterIntervalDays, previewMachine.waterFilterLimitCycles, newWeekly
+    )
+
+    val currentDescaleDays = MaintenanceCalculator.calculateEffectiveIntervalDays(
+        machine.descaleIntervalDays, machine.descaleLimitCycles, currentWeekly
+    )
+    val newDescaleDays = MaintenanceCalculator.calculateEffectiveIntervalDays(
+        previewMachine.descaleIntervalDays, previewMachine.descaleLimitCycles, newWeekly
+    )
+
+    val currentBackflushDays = MaintenanceCalculator.calculateEffectiveIntervalDays(
+        machine.backflushIntervalDays, machine.backflushLimitCycles, currentWeekly
+    )
+    val newBackflushDays = MaintenanceCalculator.calculateEffectiveIntervalDays(
+        previewMachine.backflushIntervalDays, previewMachine.backflushLimitCycles, newWeekly
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = glassBg,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.cremaGlow(color = glowColor, borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f),
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Speed,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.quick_edit_consumption),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = stringResource(R.string.quick_edit_consumption_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Stepper + Input
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilledIconButton(
+                        onClick = {
+                            val current = consumptionText.toIntOrNull() ?: 0
+                            if (current > 1) {
+                                consumptionText = (current - 1).toString()
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                    }
+
+                    OutlinedTextField(
+                        value = consumptionText,
+                        onValueChange = { consumptionText = it.filter { char -> char.isDigit() } },
+                        label = { Text(stringResource(R.string.weekly_consumption_cups)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    FilledIconButton(
+                        onClick = {
+                            val current = consumptionText.toIntOrNull() ?: 0
+                            consumptionText = (current + 1).toString()
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                    }
+                }
+
+                // Recalculated Intervals Card Preview
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(R.string.recalculated_intervals),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                        IntervalPreviewRow(
+                            label = stringResource(R.string.water_filter_replacement),
+                            oldDays = currentWaterDays,
+                            newDays = newWaterDays
+                        )
+
+                        IntervalPreviewRow(
+                            label = stringResource(R.string.descaling),
+                            oldDays = currentDescaleDays,
+                            newDays = newDescaleDays
+                        )
+
+                        IntervalPreviewRow(
+                            label = stringResource(R.string.backflushing),
+                            oldDays = currentBackflushDays,
+                            newDays = newBackflushDays
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(newWeekly) },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.save), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun IntervalPreviewRow(
+    label: String,
+    oldDays: Int,
+    newDays: Int
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (oldDays != newDays) {
+                Text(
+                    text = stringResource(R.string.days_format, oldDays),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(4.dp))
+            }
+            Text(
+                text = stringResource(R.string.days_format, newDays),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (oldDays != newDays) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
         }
     }

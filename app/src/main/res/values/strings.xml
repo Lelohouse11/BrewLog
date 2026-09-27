@@ -188,6 +188,12 @@
     <string name="specifications">Specifications</string>
     <string name="hardware">Hardware</string>
     <string name="maintenance_intervals_days">Maintenance Intervals (Days)</string>
+    <string name="quick_edit">Quick Edit</string>
+    <string name="quick_edit_consumption">Quick Edit Weekly Consumption</string>
+    <string name="quick_edit_consumption_desc">Adjust your weekly consumption. Maintenance and care intervals will be recalculated automatically.</string>
+    <string name="recalculated_intervals">Recalculated Intervals</string>
+    <string name="cups_per_week">cups / week</string>
+    <string name="days_format">%d days</string>
 
     <!-- Diagnoses -->
     <string name="diag_balanced">Balanced Extraction</string>

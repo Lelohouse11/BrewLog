@@ -188,6 +188,12 @@
     <string name="specifications">Spezifikationen</string>
     <string name="hardware">Hardware</string>
     <string name="maintenance_intervals_days">Wartungs-Intervalle (Tage)</string>
+    <string name="quick_edit">Schnellbearbeitung</string>
+    <string name="quick_edit_consumption">Wöchentlichen Verbrauch anpassen</string>
+    <string name="quick_edit_consumption_desc">Passe deinen wöchentlichen Verbrauch an. Die Wartungs- und Pflegeintervalle werden automatisch neu berechnet.</string>
+    <string name="recalculated_intervals">Neu berechnete Intervalle</string>
+    <string name="cups_per_week">Tassen / Woche</string>
+    <string name="days_format">%d Tage</string>
 
     <!-- Diagnoses -->
     <string name="diag_balanced">Ausgewogene Extraktion</string>

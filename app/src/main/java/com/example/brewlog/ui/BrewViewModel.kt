@@ -11,6 +11,7 @@ import com.example.brewlog.data.BrewLog
 import com.example.brewlog.data.EspressoMachine
 import com.example.brewlog.data.ShotLog
 import com.example.brewlog.data.ShotLogWithBean
+import com.example.brewlog.util.MaintenanceCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -207,6 +208,12 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             brewLogDao.insertEspressoMachine(machine)
         }
+    }
+
+    fun updateWeeklyConsumption(newWeeklyConsumption: Int) {
+        val current = espressoMachine.value ?: return
+        val updated = MaintenanceCalculator.updateWeeklyConsumption(current, newWeeklyConsumption)
+        updateEspressoMachine(updated)
     }
 
     fun deleteEspressoMachine() {
