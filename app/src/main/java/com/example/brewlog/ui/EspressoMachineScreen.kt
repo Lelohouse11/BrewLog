@@ -25,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
-import com.example.brewlog.ui.components.CoffeeEmptyState
+import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
 import java.util.concurrent.TimeUnit
 
@@ -89,23 +89,30 @@ fun EspressoMachineScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.espresso_machine)) },
+                title = { Text(stringResource(R.string.espresso_machine), style = MaterialTheme.typography.titleLarge) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                     if (machine != null) {
+                        val isDark = isAppInDarkTheme()
+                        val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
+                        val glassBorder = if (isDark) CremaAmber.copy(alpha = 0.3f) else CremaAmberDark.copy(alpha = 0.3f)
+
                         Box {
                             IconButton(onClick = { showMenu = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More Options")
                             }
                             DropdownMenu(
                                 expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
+                                onDismissRequest = { showMenu = false },
+                                shape = RoundedCornerShape(16.dp),
+                                containerColor = glassBg,
+                                border = BorderStroke(1.dp, glassBorder)
                             ) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.edit_machine)) },
-                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                    leadingIcon = { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary) },
                                     onClick = {
                                         showMenu = false
                                         onNavigateToEdit()
@@ -134,10 +141,16 @@ fun EspressoMachineScreen(
                     description = stringResource(R.string.no_machine_sub),
                     actionButton = {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedButton(onClick = { onNavigateToEdit() }) {
+                            OutlinedButton(
+                                onClick = { onNavigateToEdit() },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
                                 Text(stringResource(R.string.manual_setup))
                             }
-                            Button(onClick = { showSetupDialog = true }) {
+                            Button(
+                                onClick = { showSetupDialog = true },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
                                 Icon(Icons.Default.AutoAwesome, null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.ai_setup))
@@ -152,20 +165,27 @@ fun EspressoMachineScreen(
                         .padding(horizontal = 16.dp)
                         .fillMaxSize()
                         .verticalScroll(scrollState),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
                     Spacer(Modifier.height(8.dp))
 
-                    // Section 1: Machine Base Information
-                    MachineSection(title = stringResource(R.string.machine_base_info), icon = Icons.Default.Info) {
-                        // Photo
+                    // Machine Base Information Hero Card
+                    CremaGlassCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.machine_base_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
                         if (machine?.photoUri != null) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .aspectRatio(1f)
+                                    .aspectRatio(1.2f)
                                     .padding(bottom = 16.dp),
-                                shape = MaterialTheme.shapes.medium,
+                                shape = RoundedCornerShape(16.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 AsyncImage(
@@ -179,8 +199,9 @@ fun EspressoMachineScreen(
 
                         Text(
                             text = "${machine?.brand} ${machine?.model}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.ExtraBold
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
                         )
                         
                         Spacer(Modifier.height(16.dp))
@@ -201,14 +222,22 @@ fun EspressoMachineScreen(
                     }
 
                     // Section 2: Maintenance Intervals
-                    MachineSection(title = stringResource(R.string.maintenance_tracking), icon = Icons.Default.Build) {
+                    CremaGlassCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Build, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.maintenance_tracking), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+
                         Text(
                             stringResource(R.string.weekly_consumption, machine?.weeklyConsumption ?: 0),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.secondary
                         )
 
-                        Spacer(Modifier.height(16.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
                         val weeklyCount = machine?.weeklyConsumption ?: 0
                         
@@ -240,32 +269,82 @@ fun EspressoMachineScreen(
                         )
                     }
                     
-                    Spacer(Modifier.height(80.dp))
+                    Spacer(Modifier.height(96.dp))
                 }
             }
 
             if (showSetupDialog) {
+                val isDark = isAppInDarkTheme()
+                val dialogBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
                 AlertDialog(
                     onDismissRequest = { if (!isScanning) showSetupDialog = false },
-                    title = { Text(stringResource(R.string.setup_machine_ai)) },
+                    containerColor = dialogBg,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.cremaGlow(color = if (isDark) CremaAmber else CremaAmberDark, borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f),
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.setup_machine_ai), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                    },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             if (isScanning) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    CircularProgressIndicator()
-                                    Spacer(Modifier.height(16.dp))
-                                    Text(stringResource(R.string.ai_fetching_specs))
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(48.dp),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            strokeWidth = 3.5.dp
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Text(
+                                            stringResource(R.string.ai_fetching_specs),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                 }
                             } else {
                                 if (scanError != null) {
                                     Text(scanError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                                 }
-                                OutlinedTextField(value = setupBrand, onValueChange = { setupBrand = it }, label = { Text(stringResource(R.string.brand)) }, modifier = Modifier.fillMaxWidth())
-                                OutlinedTextField(value = setupModel, onValueChange = { setupModel = it }, label = { Text(stringResource(R.string.model)) }, modifier = Modifier.fillMaxWidth())
-                                OutlinedTextField(value = setupConsumption, onValueChange = { setupConsumption = it }, label = { Text("Wöchentliche Tassen") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                                OutlinedTextField(
+                                    value = setupBrand,
+                                    onValueChange = { setupBrand = it },
+                                    label = { Text(stringResource(R.string.brand)) },
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = setupModel,
+                                    onValueChange = { setupModel = it },
+                                    label = { Text(stringResource(R.string.model)) },
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = setupConsumption,
+                                    onValueChange = { setupConsumption = it },
+                                    label = { Text("Wöchentliche Tassen") },
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
                             }
                         }
                     },
@@ -273,9 +352,12 @@ fun EspressoMachineScreen(
                         if (!isScanning) {
                             Button(
                                 onClick = { geminiViewModel.fetchMachineInfo(setupBrand, setupModel) },
+                                shape = RoundedCornerShape(12.dp),
                                 enabled = setupBrand.isNotBlank() && setupModel.isNotBlank()
                             ) {
-                                Text(stringResource(R.string.find_with_ai))
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.find_with_ai), fontWeight = FontWeight.Bold)
                             }
                         }
                     },
@@ -297,27 +379,6 @@ fun InfoRow(icon: ImageVector, label: String, value: String, color: Color = Mate
         Spacer(Modifier.width(12.dp))
         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = color)
-    }
-}
-
-@Composable
-fun MachineSection(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            content()
-        }
     }
 }
 
@@ -372,8 +433,8 @@ fun MaintenanceProgressBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(0.5.dp, statusColor.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {

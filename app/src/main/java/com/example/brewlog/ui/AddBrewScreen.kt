@@ -2,8 +2,10 @@ package com.example.brewlog.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,15 +14,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
+import com.example.brewlog.ui.theme.*
 
 val FLAVOR_TAG_OPTIONS = listOf(
     "Chocolate", "Nutty", "Fruity", "Floral", "Caramel",
@@ -148,7 +149,7 @@ fun AddBrewScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(if (existingLog == null) stringResource(R.string.add_brew) else stringResource(R.string.edit_brew)) },
+                title = { Text(if (existingLog == null) stringResource(R.string.add_brew) else stringResource(R.string.edit_brew), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -157,7 +158,10 @@ fun AddBrewScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            val isDark = isAppInDarkTheme()
+            val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
+            Surface(
                 onClick = {
                     if (isValid) {
                         onSave(
@@ -192,10 +196,29 @@ fun AddBrewScreen(
                         showErrors.value = true
                     }
                 },
-                containerColor = if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.errorContainer,
-                contentColor = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onErrorContainer
+                shape = RoundedCornerShape(18.dp),
+                color = glassBg,
+                border = BorderStroke(1.5.dp, if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error),
+                shadowElevation = 8.dp
             ) {
-                Icon(Icons.Default.Done, contentDescription = null)
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Done,
+                        contentDescription = "Speichern",
+                        tint = if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.save),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    )
+                }
             }
         },
         floatingActionButtonPosition = FabPosition.End
@@ -213,7 +236,8 @@ fun AddBrewScreen(
             // AI Scanner Section
             OutlinedButton(
                 onClick = { cameraLauncher.launch(null) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(14.dp),
                 enabled = !isScanning
             ) {
                 if (isScanning) {
@@ -223,7 +247,7 @@ fun AddBrewScreen(
                 } else {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.scan_label_ai))
+                    Text(stringResource(R.string.scan_label_ai), fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -232,7 +256,15 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 1: COFFEE IDENTITY ---
-            BrewSectionCard(title = stringResource(R.string.coffee_identity), icon = Icons.Default.Coffee) {
+            CremaGlassCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.coffee_identity), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
                 OutlinedTextField(
                     value = coffeeName,
                     onValueChange = { 
@@ -240,6 +272,7 @@ fun AddBrewScreen(
                         if (it.isNotBlank()) showErrors.value = false
                     },
                     label = { Text("${stringResource(R.string.coffee_name)} *") },
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
                     isError = showErrors.value && isNameMissing
                 )
@@ -253,6 +286,7 @@ fun AddBrewScreen(
                         if (it.isNotBlank()) showErrors.value = false
                     },
                     label = { Text("${stringResource(R.string.roaster)} *") },
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
                     isError = showErrors.value && isRoasterMissing
                 )
@@ -271,6 +305,7 @@ fun AddBrewScreen(
                                 FilterChip(
                                     selected = roastLevel == level,
                                     onClick = { roastLevel = level },
+                                    shape = RoundedCornerShape(12.dp),
                                     label = { Text(level) }
                                 )
                             }
@@ -345,7 +380,15 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 2: PREPARATION SETTINGS ---
-            BrewSectionCard(title = stringResource(R.string.preparation_settings), icon = Icons.Default.Settings) {
+            CremaGlassCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.preparation_settings), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
                 GrindSizeStepper(
                     value = grindSize,
                     onValueChange = { grindSize = it },
@@ -377,7 +420,15 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 3: EVALUATION ---
-            BrewSectionCard(title = stringResource(R.string.sensory_evaluation), icon = Icons.Default.Stars) {
+            CremaGlassCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Stars, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.sensory_evaluation), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
                 // Rating
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -448,11 +499,20 @@ fun AddBrewScreen(
             }
 
             // --- SECTION 4: ADDITIONAL INFO ---
-            BrewSectionCard(title = stringResource(R.string.additional_info), icon = Icons.Default.EditNote) {
+            CremaGlassCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.EditNote, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.additional_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
                     label = { Text(stringResource(R.string.notes)) },
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(stringResource(R.string.notes_placeholder)) },
                     minLines = 3,
@@ -460,30 +520,7 @@ fun AddBrewScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(80.dp))
-        }
-    }
-}
-
-@Composable
-fun BrewSectionCard(
-    title: String,
-    icon: ImageVector,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
-            content()
+            Spacer(modifier = Modifier.height(96.dp))
         }
     }
 }
@@ -521,13 +558,5 @@ fun PercentageSlider(label: String, value: Int, maxAllowed: Int, onValueChange: 
             },
             valueRange = 0f..100f
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddBrewScreenPreview() {
-    MaterialTheme {
-        AddBrewScreen(onSave = {}, onNavigateBack = {})
     }
 }

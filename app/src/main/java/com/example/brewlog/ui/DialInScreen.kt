@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -45,12 +46,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.data.ShotLog
-import com.example.brewlog.ui.components.GramsStepper
-import com.example.brewlog.ui.components.GrindSizeStepper
+import com.example.brewlog.ui.components.*
+import com.example.brewlog.ui.theme.*
 import com.example.brewlog.util.ExtractionEngine
 import com.example.brewlog.util.getLocalizedDiagnosis
 import com.example.brewlog.util.getLocalizedExplanation
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,7 +163,7 @@ fun DialInScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.dial_in_title)) },
+                title = { Text(stringResource(R.string.dial_in_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -190,7 +192,7 @@ fun DialInScreen(
                 }
             )
 
-            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Step Content with Animation
             AnimatedContent(
@@ -387,7 +389,7 @@ private fun DialInStepHeader(
                         .weight(1f)
                         .padding(horizontal = 8.dp),
                     thickness = 1.5.dp,
-                    color = if (index < currentStep) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                    color = if (index < currentStep) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                 )
             }
         }
@@ -415,7 +417,15 @@ private fun SetupStep(
 ) {
     val canProceed = selectedBeanId != -1 && doseIn.toFloatOrNull() != null && grindSize.toFloatOrNull() != null
 
-    BrewSectionCard(title = stringResource(R.string.beans_basket_choice), icon = Icons.Default.Coffee) {
+    CremaGlassCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.beans_basket_choice), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(Modifier.height(14.dp))
+
         // Bean Dropdown
         var expanded by remember { mutableStateOf(false) }
         ExposedDropdownMenuBox(
@@ -429,14 +439,22 @@ private fun SetupStep(
                 enabled = !isRunning,
                 label = { Text(stringResource(R.string.select_bean)) },
                 trailingIcon = { if (!isRunning) ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     .fillMaxWidth()
             )
             if (!isRunning) {
+                val isDark = isAppInDarkTheme()
+                val dropdownBg = if (isDark) EspressoGlassBg else VellumGlassBg
+                val dropdownBorder = if (isDark) CremaAmber.copy(alpha = 0.3f) else CremaAmberDark.copy(alpha = 0.3f)
+
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = dropdownBg,
+                    border = BorderStroke(1.dp, dropdownBorder)
                 ) {
                     if (beans.isEmpty()) {
                         DropdownMenuItem(
@@ -448,14 +466,17 @@ private fun SetupStep(
                             DropdownMenuItem(
                                 text = {
                                     Column {
-                                        Text(bean.coffeeName, fontWeight = FontWeight.Bold)
-                                        Text(bean.roaster, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                        Text(bean.coffeeName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                        if (bean.roaster.isNotEmpty()) {
+                                            Text(bean.roaster, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                        }
                                     }
                                 },
                                 onClick = {
                                     onBeanSelected(bean.id)
                                     expanded = false
-                                }
+                                },
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                             )
                         }
                     }
@@ -463,11 +484,11 @@ private fun SetupStep(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
 
         // Basket Toggle
         Text(stringResource(R.string.basket_size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
                 selected = basketType == "single",
@@ -514,53 +535,47 @@ private fun SetupStep(
 
     // Target Info Box
     target?.let { t ->
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Tune,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        stringResource(R.string.target_params),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(stringResource(R.string.target_yield), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                        Text("${"%.1f".format(t.yieldOut)} g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Column {
-                        Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                        Text("${t.timeSecRange.start.toInt()} - ${t.timeSecRange.endInclusive.toInt()} s", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Column {
-                        Text(stringResource(R.string.target_ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                        val doseVal = doseIn.toFloatOrNull() ?: 1f
-                        val ratioVal = if (doseVal > 0) t.yieldOut / doseVal else 2f
-                        Text("1 : ${"%.1f".format(ratioVal)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(Modifier.height(6.dp))
+        CremaGlassCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Tune,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (t.isFromHistory) stringResource(R.string.target_history_hint) else stringResource(R.string.target_default_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    stringResource(R.string.target_params),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
                 )
             }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(stringResource(R.string.target_yield), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text("${"%.1f".format(t.yieldOut)} g", style = MaterialTheme.typography.titleMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+                }
+                Column {
+                    Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text("${t.timeSecRange.start.toInt()} - ${t.timeSecRange.endInclusive.toInt()} s", style = MaterialTheme.typography.titleMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+                }
+                Column {
+                    Text(stringResource(R.string.target_ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    val doseVal = doseIn.toFloatOrNull() ?: 1f
+                    val ratioVal = if (doseVal > 0) t.yieldOut / doseVal else 2f
+                    Text("1 : ${"%.1f".format(ratioVal)}", style = MaterialTheme.typography.titleMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (t.isFromHistory) stringResource(R.string.target_history_hint) else stringResource(R.string.target_default_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
         }
     }
 
@@ -570,11 +585,12 @@ private fun SetupStep(
     Button(
         onClick = onNextClick,
         enabled = canProceed,
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
     ) {
-        Text(stringResource(R.string.next_to_shot), fontSize = 16.sp)
+        Text(stringResource(R.string.next_to_shot), fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.width(8.dp))
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
     }
@@ -597,15 +613,9 @@ private fun ShotStep(
     onNextClick: () -> Unit
 ) {
     // Active Setup Info Banner
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(12.dp)
-    ) {
+    CremaGlassCard(contentPadding = PaddingValues(14.dp)) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -617,7 +627,7 @@ private fun ShotStep(
                 )
                 val basketLabel = if (basketType == "single") stringResource(R.string.single_basket) else stringResource(R.string.double_basket)
                 Text(
-                    "$basketLabel • ${stringResource(R.string.dose_in)}: ${doseIn}g • ${stringResource(R.string.grind_size)}: $grindSize",
+                    "$basketLabel • ${doseIn}g • Grind $grindSize",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -625,6 +635,7 @@ private fun ShotStep(
             OutlinedButton(
                 onClick = onBackClick,
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(10.dp),
                 enabled = !isRunning
             ) {
                 Text(stringResource(R.string.edit_setup), fontSize = 12.sp)
@@ -634,14 +645,10 @@ private fun ShotStep(
 
     val haptic = LocalHapticFeedback.current
 
-    // Timer Card with Gauge
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    // Timer Card with Liquid Crema Gauge
+    CremaGlassCard {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val seconds = timeElapsed / 1000f
@@ -657,7 +664,7 @@ private fun ShotStep(
             val pulseScale by if (isRunning) {
                 infiniteTransition.animateFloat(
                     initialValue = 1f,
-                    targetValue = 1.06f,
+                    targetValue = 1.08f,
                     animationSpec = infiniteRepeatable(
                         animation = tween(1000, easing = FastOutSlowInEasing),
                         repeatMode = RepeatMode.Reverse
@@ -671,7 +678,7 @@ private fun ShotStep(
             val pulseAlpha by if (isRunning) {
                 infiniteTransition.animateFloat(
                     initialValue = 0.2f,
-                    targetValue = 0.6f,
+                    targetValue = 0.5f,
                     animationSpec = infiniteRepeatable(
                         animation = tween(1000, easing = FastOutSlowInEasing),
                         repeatMode = RepeatMode.Reverse
@@ -682,9 +689,8 @@ private fun ShotStep(
                 remember { mutableFloatStateOf(0f) }
             }
 
-            // Target Reached effect
             val targetScale by animateFloatAsState(
-                targetValue = if (targetOk) 1.08f else 1f,
+                targetValue = if (targetOk) 1.06f else 1f,
                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
                 label = "targetScale"
             )
@@ -702,10 +708,9 @@ private fun ShotStep(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(190.dp)
+                    .size(200.dp)
                     .padding(8.dp)
             ) {
-                // Outer pulsing ring when timer is running
                 if (isRunning) {
                     Box(
                         modifier = Modifier
@@ -716,17 +721,16 @@ private fun ShotStep(
                                 alpha = pulseAlpha
                             }
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                     )
                 }
 
-                // Target reached glow background
                 if (targetOk) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f))
                     )
                 }
 
@@ -740,7 +744,7 @@ private fun ShotStep(
                             scaleY = targetScale
                         },
                     strokeWidth = 10.dp,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     color = indicatorColor
                 )
 
@@ -752,10 +756,11 @@ private fun ShotStep(
                     }
                 ) {
                     Text(
-                        text = "%.1f".format(seconds),
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 44.sp),
+                        text = String.format(Locale.ROOT, "%.1f", seconds),
+                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 46.sp),
+                        fontFamily = BaristaMonospaceFontFamily,
                         fontWeight = FontWeight.Bold,
-                        color = if (targetOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (targetOk) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.seconds_short),
@@ -775,15 +780,15 @@ private fun ShotStep(
                     else -> stringResource(R.string.target_range_slow)
                 }
                 Surface(
-                    color = if (targetOk) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp)
+                    color = if (targetOk) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
                         text = statusText,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (targetOk) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -798,6 +803,7 @@ private fun ShotStep(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
@@ -824,13 +830,22 @@ private fun ShotStep(
     }
 
     // Yield Output Input
-    BrewSectionCard(title = stringResource(R.string.espresso_yield), icon = Icons.AutoMirrored.Filled.Assignment) {
+    CremaGlassCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.espresso_yield), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(Modifier.height(12.dp))
+
         OutlinedTextField(
             value = yieldOut,
             onValueChange = onYieldChange,
             label = { Text(stringResource(R.string.yield_out)) },
             placeholder = { Text("36.0") },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             suffix = { Text("g") }
         )
@@ -841,29 +856,7 @@ private fun ShotStep(
 
         if (y > 0 && d > 0) {
             Spacer(Modifier.height(12.dp))
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                        Text("1 : ${"%.1f".format(y / d)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    if (t > 0) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                            Text("${"%.1f".format(y / t)} g/s", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
+            BrewRatioBar(doseInGrams = d, yieldInGrams = y, extractionTimeSec = t)
         }
     }
 
@@ -873,6 +866,7 @@ private fun ShotStep(
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedButton(
             onClick = onBackClick,
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .weight(1f)
                 .height(52.dp)
@@ -883,11 +877,12 @@ private fun ShotStep(
         Button(
             onClick = onNextClick,
             enabled = timeElapsed > 0 || yieldOut.toFloatOrNull() != null,
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .weight(1.5f)
                 .height(52.dp)
         ) {
-            Text(stringResource(R.string.next_to_result), fontSize = 15.sp)
+            Text(stringResource(R.string.next_to_result), fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.width(6.dp))
             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         }
@@ -919,42 +914,44 @@ private fun ResultStep(
     val t = timeElapsed / 1000f
 
     // Shot Summary Card
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.extraction_summary), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-            Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("In / Out", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    Text("${"%.1f".format(d)}g / ${"%.1f".format(y)}g", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                }
-                Column {
-                    Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    Text("${"%.1f".format(t)} s", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                }
-                Column {
-                    Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    val ratio = if (d > 0) y / d else 0f
-                    Text("1 : ${"%.1f".format(ratio)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                }
-                Column {
-                    Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    val flow = if (t > 0) y / t else 0f
-                    Text("${"%.1f".format(flow)} g/s", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                }
+    CremaGlassCard {
+        Text(stringResource(R.string.extraction_summary), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("In / Out", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text("${"%.1f".format(d)}g / ${"%.1f".format(y)}g", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text(stringResource(R.string.target_time), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text("${"%.1f".format(t)} s", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text(stringResource(R.string.ratio), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                val ratio = if (d > 0) y / d else 0f
+                Text("1 : ${"%.1f".format(ratio)}", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text(stringResource(R.string.flow_rate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                val flow = if (t > 0) y / t else 0f
+                Text("${"%.1f".format(flow)} g/s", style = MaterialTheme.typography.bodyMedium, fontFamily = BaristaMonospaceFontFamily, fontWeight = FontWeight.Bold)
             }
         }
     }
 
     // Sensory Evaluation
-    BrewSectionCard(title = stringResource(R.string.sensory_evaluation), icon = Icons.Default.ThumbUp) {
+    CremaGlassCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.ThumbUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.sensory_evaluation), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(Modifier.height(8.dp))
+
         EvaluationRow(
             stringResource(R.string.acidity),
             acidityEval,
@@ -975,73 +972,61 @@ private fun ResultStep(
     }
 
     // Recommendation Card
-    val cardColor = when {
-        recommendation.puckPrepWarning -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-        recommendation.type == ExtractionEngine.DiagnosisType.BALANCED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-        else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-    }
-
     val iconVector = when {
         recommendation.puckPrepWarning -> Icons.Default.Warning
         recommendation.type == ExtractionEngine.DiagnosisType.BALANCED -> Icons.Default.CheckCircle
         else -> Icons.Default.Tune
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = cardColor,
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    iconVector,
-                    contentDescription = null,
-                    tint = if (recommendation.puckPrepWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(Modifier.width(8.dp))
+    CremaGlassCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                iconVector,
+                contentDescription = null,
+                tint = if (recommendation.puckPrepWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                recommendation.getLocalizedDiagnosis(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (recommendation.puckPrepWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            recommendation.getLocalizedExplanation(),
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        if (recommendation.suggestedGrindChange != 0f || recommendation.suggestedYieldChange != 0f) {
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            Spacer(Modifier.height(12.dp))
+
+            Text(stringResource(R.string.recommended_adjustments), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+
+            if (recommendation.suggestedGrindChange != 0f) {
+                val direction = if (recommendation.suggestedGrindChange > 0)
+                    stringResource(R.string.grind_direction_coarser)
+                else
+                    stringResource(R.string.grind_direction_finer)
+
                 Text(
-                    recommendation.getLocalizedDiagnosis(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (recommendation.puckPrepWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    stringResource(R.string.adjust_grind, direction, recommendation.recommendedGrindSize, grindSize),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
                 )
             }
-
-            Spacer(Modifier.height(8.dp))
-            Text(
-                recommendation.getLocalizedExplanation(),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            if (recommendation.suggestedGrindChange != 0f || recommendation.suggestedYieldChange != 0f) {
-                Spacer(Modifier.height(12.dp))
-                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(Modifier.height(12.dp))
-
-                Text(stringResource(R.string.recommended_adjustments), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-
-                if (recommendation.suggestedGrindChange != 0f) {
-                    val direction = if (recommendation.suggestedGrindChange > 0)
-                        stringResource(R.string.grind_direction_coarser)
-                    else
-                        stringResource(R.string.grind_direction_finer)
-
-                    Text(
-                        stringResource(R.string.adjust_grind, direction, recommendation.recommendedGrindSize, grindSize),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                if (recommendation.suggestedYieldChange != 0f) {
-                    Text(
-                        stringResource(R.string.adjust_yield, recommendation.recommendedYieldOut, yieldOut),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            if (recommendation.suggestedYieldChange != 0f) {
+                Text(
+                    stringResource(R.string.adjust_yield, recommendation.recommendedYieldOut, yieldOut),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -1051,6 +1036,7 @@ private fun ResultStep(
         value = notes,
         onValueChange = onNotesChange,
         label = { Text(stringResource(R.string.notes)) },
+        shape = RoundedCornerShape(14.dp),
         modifier = Modifier.fillMaxWidth()
     )
 
@@ -1060,24 +1046,26 @@ private fun ResultStep(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Button(
             onClick = onSaveAndApplySettings,
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(52.dp)
         ) {
             val label = if (recommendation.type == ExtractionEngine.DiagnosisType.BALANCED)
                 stringResource(R.string.log_and_keep)
             else
                 stringResource(R.string.log_and_apply)
-            Text(label, fontSize = 15.sp)
+            Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
 
         OutlinedButton(
             onClick = onSaveOnly,
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(52.dp)
         ) {
-            Text(stringResource(R.string.log_only))
+            Text(stringResource(R.string.log_only), fontWeight = FontWeight.Medium)
         }
 
         TextButton(
@@ -1086,11 +1074,12 @@ private fun ResultStep(
         ) {
             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.log_and_next_shot))
+            Text(stringResource(R.string.log_and_next_shot), fontWeight = FontWeight.Bold)
         }
 
         OutlinedButton(
             onClick = onBackClick,
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.back))

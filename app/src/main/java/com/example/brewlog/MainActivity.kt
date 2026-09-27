@@ -11,15 +11,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -29,7 +23,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.work.*
 import com.example.brewlog.ui.AddBrewScreen
-import com.example.brewlog.ui.components.CoffeeBeanIcon
 import com.example.brewlog.ui.BrewViewModel
 import com.example.brewlog.ui.DialInScreen
 import com.example.brewlog.ui.EditMachineScreen
@@ -38,6 +31,7 @@ import com.example.brewlog.ui.HomeScreen
 import com.example.brewlog.ui.SettingsScreen
 import com.example.brewlog.ui.SettingsViewModel
 import com.example.brewlog.ui.ShotHistoryScreen
+import com.example.brewlog.ui.components.FloatingGlassNavigationBar
 import com.example.brewlog.ui.theme.BrewLogTheme
 import com.example.brewlog.util.NotificationHelper
 import com.example.brewlog.worker.MaintenanceReminderWorker
@@ -72,74 +66,11 @@ class MainActivity : AppCompatActivity() {
                 val currentBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = currentBackStackEntry?.destination?.route
 
-                Scaffold(
-                    bottomBar = {
-                        if (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history") {
-                            NavigationBar {
-                                NavigationBarItem(
-                                    selected = currentDestination == "home",
-                                    onClick = {
-                                        if (currentDestination != "home") {
-                                            navController.navigate("home") {
-                                                popUpTo("home") { saveState = true }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        }
-                                    },
-                                    icon = { CoffeeBeanIcon(modifier = Modifier.size(22.dp)) },
-                                    label = { Text(stringResource(R.string.my_brews), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
-                                )
-                                NavigationBarItem(
-                                    selected = currentDestination == "dial_in",
-                                    onClick = {
-                                        if (currentDestination != "dial_in") {
-                                            navController.navigate("dial_in") {
-                                                popUpTo("home") { saveState = true }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        }
-                                    },
-                                    icon = { Icon(Icons.Default.Timer, contentDescription = null) },
-                                    label = { Text("Dial-In", maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
-                                )
-                                NavigationBarItem(
-                                    selected = currentDestination == "shot_history",
-                                    onClick = {
-                                        if (currentDestination != "shot_history") {
-                                            navController.navigate("shot_history") {
-                                                popUpTo("home") { saveState = true }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        }
-                                    },
-                                    icon = { Icon(Icons.Default.History, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.shot_history), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
-                                )
-                                NavigationBarItem(
-                                    selected = currentDestination == "espresso_machine",
-                                    onClick = {
-                                        if (currentDestination != "espresso_machine") {
-                                            navController.navigate("espresso_machine") {
-                                                popUpTo("home") { saveState = true }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        }
-                                    },
-                                    icon = { Icon(Icons.Default.CoffeeMaker, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.espresso_machine), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center) }
-                                )
-                            }
-                        }
-                    }
-                ) { innerPadding ->
+                Box(modifier = Modifier.fillMaxSize()) {
                     NavHost(
                         navController = navController,
                         startDestination = "home",
-                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                        modifier = Modifier.fillMaxSize(),
                         enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 4 } },
                         exitTransition = { fadeOut(animationSpec = tween(250, easing = FastOutSlowInEasing)) + slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 4 } },
                         popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 4 } },
@@ -234,6 +165,24 @@ class MainActivity : AppCompatActivity() {
                                 existingLog = logToEdit
                             )
                         }
+                    }
+
+                    if (currentDestination == "home" || currentDestination == "espresso_machine" || currentDestination == "dial_in" || currentDestination == "shot_history") {
+                        FloatingGlassNavigationBar(
+                            currentDestination = currentDestination,
+                            onNavigate = { destination ->
+                                if (currentDestination != destination) {
+                                    navController.navigate(destination) {
+                                        popUpTo("home") { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .navigationBarsPadding()
+                        )
                     }
                 }
             }

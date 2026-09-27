@@ -9,8 +9,8 @@ import androidx.compose.ui.graphics.Color
 import com.example.brewlog.data.ThemeMode
 
 /**
- * Warm Minimalist Coffee Dark Color Scheme.
- * Deep espresso roast tones with golden crema amber primary highlights.
+ * BrewLog "Crema Glass" Dark Color Scheme.
+ * Deep roasted espresso background with warm crema amber accents & glass highlights.
  */
 private val DarkColorScheme = darkColorScheme(
     primary = CremaAmber,
@@ -33,12 +33,12 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 /**
- * Warm Minimalist Coffee Light Color Scheme.
- * Unbleached filter paper off-white background with dark espresso roast primary highlights.
+ * BrewLog "Vellum Paper" Light Color Scheme.
+ * Unbleached filter paper off-white background with dark espresso roast primary highlights & warm copper accents.
  */
 private val LightColorScheme = lightColorScheme(
     primary = DarkRoastBrown,
-    onPrimary = CoffeeLightBackground,
+    onPrimary = White,
     primaryContainer = CoffeeLightContainer,
     onPrimaryContainer = DarkCharcoalText,
     secondary = MediumRoastBrown,
@@ -52,9 +52,18 @@ private val LightColorScheme = lightColorScheme(
     surface = CoffeeLightSurface,
     onSurface = DarkCharcoalText,
     surfaceVariant = CoffeeLightContainer,
-    onSurfaceVariant = Color(0xFF5C524A),
+    onSurfaceVariant = Color(0xFF4A4038),
     outline = CoffeeLightContainerBorder
 )
+
+/**
+ * Helper to check if the current active App Theme is dark.
+ * Guarantees components adapt correctly whether theme is controlled by App Settings or System.
+ */
+@Composable
+fun isAppInDarkTheme(): Boolean {
+    return MaterialTheme.colorScheme.background == CoffeeDarkBackground
+}
 
 @Composable
 fun BrewLogTheme(

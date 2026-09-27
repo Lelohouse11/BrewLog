@@ -1,7 +1,9 @@
 package com.example.brewlog.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -14,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.brewlog.R
+import com.example.brewlog.ui.theme.BaristaMonospaceFontFamily
 
 private val ROAST_OPTIONS = listOf("Light", "Medium", "Dark")
 private val FLAVOR_OPTIONS = listOf(
@@ -34,7 +37,7 @@ fun FilterBottomSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
@@ -43,11 +46,15 @@ fun FilterBottomSheet(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(stringResource(R.string.filters), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+            Text(
+                stringResource(R.string.filters),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
             TextButton(onClick = onReset) {
                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.reset_all))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.reset_all), style = MaterialTheme.typography.labelMedium)
             }
         }
 
@@ -58,12 +65,14 @@ fun FilterBottomSheet(
                     selected = sortOption == SortOption.NAME,
                     onClick = { onSortChange(SortOption.NAME) },
                     label = { Text(stringResource(R.string.sort_name)) },
+                    shape = RoundedCornerShape(12.dp),
                     leadingIcon = if (sortOption == SortOption.NAME) { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
                 )
                 FilterChip(
                     selected = sortOption == SortOption.RATING,
                     onClick = { onSortChange(SortOption.RATING) },
                     label = { Text(stringResource(R.string.sort_rating)) },
+                    shape = RoundedCornerShape(12.dp),
                     leadingIcon = if (sortOption == SortOption.RATING) { { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) } } else null
                 )
             }
@@ -104,6 +113,7 @@ fun FilterBottomSheet(
                             }
                             onFilterChange(filterState.copy(selectedRoasts = newSet))
                         },
+                        shape = RoundedCornerShape(12.dp),
                         label = { Text(roast) }
                     )
                 }
@@ -124,20 +134,25 @@ fun FilterBottomSheet(
                             }
                             onFilterChange(filterState.copy(selectedFlavorTags = newSet))
                         },
+                        shape = RoundedCornerShape(12.dp),
                         label = { Text(tag) }
                     )
                 }
             }
         }
-        
+
         Button(
             onClick = onApply,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-            shape = MaterialTheme.shapes.medium
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text(stringResource(R.string.apply_filters), fontWeight = FontWeight.Bold)
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
@@ -152,7 +167,7 @@ fun FilterSection(title: String, content: @Composable () -> Unit) {
             color = MaterialTheme.colorScheme.primary
         )
         content()
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     }
 }
 
@@ -165,17 +180,24 @@ fun FilterRangeSlider(
     onValueChange: (ClosedFloatingPointRange<Float>) -> Unit
 ) {
     Column {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = MaterialTheme.shapes.extraSmall
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
             ) {
                 Text(
                     text = "${value.start.toInt()} - ${value.endInclusive.toInt()}", 
                     style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                    fontWeight = FontWeight.Bold
+                    fontFamily = BaristaMonospaceFontFamily,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

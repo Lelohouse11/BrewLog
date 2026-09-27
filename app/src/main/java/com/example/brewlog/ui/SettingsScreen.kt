@@ -2,12 +2,17 @@ package com.example.brewlog.ui
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Launch
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
@@ -17,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -27,6 +33,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.BuildConfig
 import com.example.brewlog.R
 import com.example.brewlog.data.ThemeMode
+import com.example.brewlog.ui.components.CremaGlassCard
+import com.example.brewlog.ui.theme.*
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.abs
 
@@ -34,22 +43,43 @@ import kotlin.math.abs
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel = viewModel(),
+    brewViewModel: BrewViewModel = viewModel()
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val gramsStepSize by viewModel.gramsStepSize.collectAsState()
     val grindStepSize by viewModel.grindStepSize.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     
     val showThemeDialog = remember { mutableStateOf(false) }
     val showLanguageDialog = remember { mutableStateOf(false) }
     val showGramsStepDialog = remember { mutableStateOf(false) }
     val showGrindStepDialog = remember { mutableStateOf(false) }
 
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { brewViewModel.importData(it) }
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val json = brewViewModel.exportData()
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(json.toByteArray())
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings)) },
+                title = { Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -61,99 +91,118 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
+                .fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 SettingsSectionHeader(stringResource(R.string.appearance))
-            }
+                Spacer(Modifier.height(8.dp))
+                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                    val themeLabel = when (themeMode) {
+                        ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                        ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                        ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                    }
+                    SettingsItem(
+                        title = stringResource(R.string.theme),
+                        subtitle = themeLabel,
+                        icon = Icons.Default.Palette,
+                        onClick = { showThemeDialog.value = true }
+                    )
 
-            item {
-                val themeLabel = when (themeMode) {
-                    ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
-                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
-                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                    val currentLang = viewModel.getCurrentLanguageTag()
+                    val langLabel = when {
+                        currentLang.isEmpty() -> stringResource(R.string.language_system)
+                        currentLang.startsWith("de") -> stringResource(R.string.language_de)
+                        currentLang.startsWith("en") -> stringResource(R.string.language_en)
+                        else -> stringResource(R.string.language_system)
+                    }
+                    SettingsItem(
+                        title = stringResource(R.string.language),
+                        subtitle = langLabel,
+                        icon = Icons.Default.Language,
+                        onClick = { showLanguageDialog.value = true }
+                    )
                 }
-                SettingsItem(
-                    title = stringResource(R.string.theme),
-                    subtitle = themeLabel,
-                    icon = Icons.Default.Palette,
-                    onClick = { showThemeDialog.value = true }
-                )
-            }
-
-            item {
-                val currentLang = viewModel.getCurrentLanguageTag()
-                val langLabel = when {
-                    currentLang.isEmpty() -> stringResource(R.string.language_system)
-                    currentLang.startsWith("de") -> stringResource(R.string.language_de)
-                    currentLang.startsWith("en") -> stringResource(R.string.language_en)
-                    else -> stringResource(R.string.language_system)
-                }
-                SettingsItem(
-                    title = stringResource(R.string.language),
-                    subtitle = langLabel,
-                    icon = Icons.Default.Language,
-                    onClick = { showLanguageDialog.value = true }
-                )
-            }
-
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
             item {
                 SettingsSectionHeader("Barista Einstellungen")
+                Spacer(Modifier.height(8.dp))
+                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                    SettingsItem(
+                        title = "Gramm Schrittweite",
+                        subtitle = "${String.format(Locale.ROOT, "%.1f", gramsStepSize)} g",
+                        icon = Icons.Default.Scale,
+                        onClick = { showGramsStepDialog.value = true }
+                    )
+
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                    SettingsItem(
+                        title = "Mahlgrad Schrittweite",
+                        subtitle = String.format(Locale.ROOT, "%.1f", grindStepSize),
+                        icon = Icons.Default.Tune,
+                        onClick = { showGrindStepDialog.value = true }
+                    )
+                }
             }
 
             item {
-                SettingsItem(
-                    title = "Gramm Schrittweite",
-                    subtitle = "${String.format(Locale.ROOT, "%.1f", gramsStepSize)} g",
-                    icon = Icons.Default.Scale,
-                    onClick = { showGramsStepDialog.value = true }
-                )
-            }
+                SettingsSectionHeader("Daten & Sicherung")
+                Spacer(Modifier.height(8.dp))
+                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                    SettingsItem(
+                        title = stringResource(R.string.import_json),
+                        subtitle = "Bohnen & Einstellungen aus Datei wiederherstellen",
+                        icon = Icons.Default.FileDownload,
+                        onClick = {
+                            importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                        }
+                    )
 
-            item {
-                SettingsItem(
-                    title = "Mahlgrad Schrittweite",
-                    subtitle = String.format(Locale.ROOT, "%.1f", grindStepSize),
-                    icon = Icons.Default.Tune,
-                    onClick = { showGrindStepDialog.value = true }
-                )
-            }
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    SettingsItem(
+                        title = stringResource(R.string.export_json),
+                        subtitle = "Bohnen & Einstellungen als JSON exportieren",
+                        icon = Icons.Default.FileUpload,
+                        onClick = {
+                            exportLauncher.launch("brew_settings.json")
+                        }
+                    )
+                }
             }
 
             item {
                 SettingsSectionHeader(stringResource(R.string.about))
-            }
+                Spacer(Modifier.height(8.dp))
+                CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                    SettingsItem(
+                        title = stringResource(R.string.version),
+                        subtitle = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                        icon = Icons.Default.Info,
+                        onClick = {}
+                    )
 
-            item {
-                SettingsItem(
-                    title = stringResource(R.string.version),
-                    subtitle = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
-                    icon = Icons.Default.Info,
-                    onClick = {} // Not interactive as requested
-                )
-            }
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            item {
-                SettingsItem(
-                    title = stringResource(R.string.github_repo),
-                    subtitle = "https://github.com/Lelohouse11/BrewLog",
-                    icon = Icons.AutoMirrored.Filled.Launch,
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, "https://github.com/Lelohouse11/BrewLog".toUri())
-                        try {
-                            context.startActivity(intent)
-                        } catch (_: ActivityNotFoundException) {
-                            // Handle securely
+                    SettingsItem(
+                        title = stringResource(R.string.github_repo),
+                        subtitle = "https://github.com/Lelohouse11/BrewLog",
+                        icon = Icons.AutoMirrored.Filled.Launch,
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, "https://github.com/Lelohouse11/BrewLog".toUri())
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: ActivityNotFoundException) {
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -211,10 +260,10 @@ fun SettingsScreen(
 fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelLarge,
+        style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
     )
 }
 
@@ -228,7 +277,8 @@ fun SettingsItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        color = Color.Transparent
     ) {
         Row(
             modifier = Modifier
@@ -240,14 +290,14 @@ fun SettingsItem(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = subtitle,
@@ -265,9 +315,14 @@ fun ThemeSelectionDialog(
     onDismiss: () -> Unit,
     onSelect: (ThemeMode) -> Unit
 ) {
+    val isDark = isAppInDarkTheme()
+    val dialogBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.select_theme)) },
+        containerColor = dialogBg,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text(stringResource(R.string.select_theme), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 ThemeOption(stringResource(R.string.theme_system), ThemeMode.SYSTEM, currentMode, onSelect)
@@ -308,9 +363,14 @@ fun LanguageSelectionDialog(
     onDismiss: () -> Unit,
     onSelect: (String) -> Unit
 ) {
+    val isDark = isAppInDarkTheme()
+    val dialogBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.select_language)) },
+        containerColor = dialogBg,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text(stringResource(R.string.select_language), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 LanguageOption(stringResource(R.string.language_system), "", currentTag, onSelect)
@@ -355,9 +415,14 @@ fun StepSizeSelectionDialog(
     onSelect: (Float) -> Unit
 ) {
     val options = listOf(0.1f, 0.5f, 1.0f)
+    val isDark = isAppInDarkTheme()
+    val dialogBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        containerColor = dialogBg,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 options.forEach { step ->
@@ -372,6 +437,7 @@ fun StepSizeSelectionDialog(
                         Text(
                             text = "${String.format(Locale.ROOT, "%.1f", step)} $unit".trim(),
                             style = MaterialTheme.typography.bodyLarge,
+                            fontFamily = BaristaMonospaceFontFamily,
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }

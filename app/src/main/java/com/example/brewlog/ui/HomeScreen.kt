@@ -1,7 +1,5 @@
 package com.example.brewlog.ui
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -10,34 +8,34 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.delay
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
+import com.example.brewlog.ui.theme.*
 import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: BrewViewModel,
@@ -52,133 +50,123 @@ fun HomeScreen(
 
     var expandedLogId by remember { mutableStateOf<Int?>(null) }
     val showFilters = remember { mutableStateOf(false) }
-    val showMenu = remember { mutableStateOf(false) }
-    var isSearchActive by remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val isDark = isAppInDarkTheme()
 
-    val importLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let { viewModel.importData(it) }
-    }
-
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        uri?.let {
-            scope.launch {
-                val json = viewModel.exportData()
-                context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    outputStream.write(json.toByteArray())
-                }
-            }
-        }
-    }
+    val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
+    val glassBorder = if (isDark) CremaAmber.copy(alpha = 0.35f) else CremaAmberDark.copy(alpha = 0.35f)
+    val glowColor = if (isDark) CremaAmber else CremaAmberDark
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            Column {
-                SearchBar(
-                    expanded = isSearchActive,
-                    onExpandedChange = { isSearchActive = it },
-                    inputField = {
-                        SearchBarDefaults.InputField(
-                            query = searchQuery,
-                            onQueryChange = { viewModel.updateSearchQuery(it) },
-                            onSearch = { isSearchActive = false },
-                            expanded = isSearchActive,
-                            onExpandedChange = { isSearchActive = it },
-                            placeholder = { Text(stringResource(R.string.search_placeholder)) },
-                            leadingIcon = {
-                                if (isSearchActive) {
-                                    IconButton(onClick = { isSearchActive = false }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                                    }
-                                } else {
-                                    Icon(Icons.Default.Search, contentDescription = null)
-                                }
-                            },
-                            trailingIcon = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                                            Icon(Icons.Default.Clear, contentDescription = "Clear")
-                                        }
-                                    }
-                                    if (!isSearchActive) {
-                                        IconButton(onClick = { showFilters.value = true }) {
-                                            Icon(Icons.Default.FilterList, contentDescription = "Filter")
-                                        }
-                                        IconButton(onClick = onNavigateToSettings) {
-                                            Icon(Icons.Default.Settings, contentDescription = "Settings")
-                                        }
-                                        Box {
-                                            IconButton(onClick = { showMenu.value = true }) {
-                                                Icon(Icons.Default.MoreVert, contentDescription = "More")
-                                            }
-                                            DropdownMenu(
-                                                expanded = showMenu.value,
-                                                onDismissRequest = { showMenu.value = false }
-                                            ) {
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.import_json)) },
-                                                    leadingIcon = { Icon(Icons.Default.FileDownload, null) },
-                                                    onClick = {
-                                                        showMenu.value = false
-                                                        importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    text = { Text(stringResource(R.string.export_json)) },
-                                                    leadingIcon = { Icon(Icons.Default.FileUpload, null) },
-                                                    onClick = {
-                                                        showMenu.value = false
-                                                        exportLauncher.launch("brew_settings.json")
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                    },
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 12.dp, bottom = 4.dp)
+            ) {
+                // Seamless Crema Glass Search Header with Radiant Glow
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = glassBg,
+                    border = BorderStroke(1.2.dp, glassBorder),
+                    shadowElevation = 6.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
+                        .cremaGlow(color = glowColor, borderRadius = 24.dp, glowRadius = 5.dp, alpha = 0.2f)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items(logs, key = { "search_${it.id}" }) { log ->
-                            BrewLogItem(
-                                log = log,
-                                isExpanded = false,
-                                onToggleExpand = {
-                                    viewModel.updateSearchQuery(log.coffeeName)
-                                    isSearchActive = false
-                                },
-                                onDelete = { viewModel.deleteLog(log) },
-                                onEdit = { onNavigateToEditBrew(log.id) }
-                            )
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+
+                        Spacer(Modifier.width(8.dp))
+
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.updateSearchQuery(it) },
+                            placeholder = {
+                                Text(
+                                    stringResource(R.string.search_placeholder),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            singleLine = true,
+                            maxLines = 1,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            ),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            }
+                        }
+
+                        IconButton(onClick = { showFilters.value = true }) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                        }
+
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                         }
                     }
                 }
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
+            Surface(
                 onClick = onNavigateToAddBrew,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                shape = RoundedCornerShape(20.dp),
+                color = glassBg,
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                shadowElevation = 8.dp,
+                modifier = Modifier
+                    .padding(bottom = 76.dp)
+                    .cremaGlow(color = glowColor, borderRadius = 20.dp, glowRadius = 6.dp, alpha = 0.3f)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Brew Setting")
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add Brew Setting",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = "Bohne",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -186,14 +174,15 @@ fun HomeScreen(
             if (logs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CoffeeEmptyState(
-                        title = stringResource(R.string.no_brews_found)
+                        title = stringResource(R.string.no_brews_found),
+                        description = "Füge deine erste Specialty Coffee Bohne hinzu"
                     )
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 120.dp)
                 ) {
                     itemsIndexed(logs, key = { _, item -> item.id }) { index, log ->
                         var visible by remember { mutableStateOf(false) }
@@ -272,179 +261,180 @@ fun BrewLogItem(
         label = "rotation"
     )
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
+    CremaGlassCard(
+        onClick = onToggleExpand,
+        modifier = Modifier.animateContentSize(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMediumLow
             )
-            .clickable { onToggleExpand() },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Collapsed Header
+        // Specialty Bag Header: Roaster Upper case + Roast Level Badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = log.roaster.ifEmpty { "SPECIALTY ROASTER" }.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.2.sp,
+                fontWeight = FontWeight.Bold
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = log.coffeeName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (log.roaster.isNotEmpty()) {
-                        Text(
-                            text = log.roaster,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // Quick Stats Row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        QuickStat(Icons.Default.Settings, "${stringResource(R.string.grind_size)} ${log.grindSize}")
-                        if (log.singleGrams > 0 || log.doubleGrams > 0) {
-                            val grams = if (log.doubleGrams > 0) log.doubleGrams else log.singleGrams
-                            QuickStat(Icons.Default.Scale, "${grams}g")
-                        }
-                        if (log.roastLevel.isNotEmpty()) {
-                            RoastLevelBadge(roastLevel = log.roastLevel)
-                        }
-                    }
+                FreshnessBadge(roastDateString = log.notes)
+                if (log.roastLevel.isNotEmpty()) {
+                    RoastLevelBadge(roastLevel = log.roastLevel)
                 }
+            }
+        }
 
-                Column(horizontalAlignment = Alignment.End) {
-                    if (log.hasRating) {
-                        CoffeeBeanRating(
-                            rating = log.rating,
-                            beanSize = 14.dp,
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = onToggleExpand,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ExpandMore,
-                            contentDescription = null,
-                            modifier = Modifier.rotate(rotation),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Coffee Name in Serif Display Font
+        Text(
+            text = log.coffeeName,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Collapsed Flavor Tags preview
+        if (log.hasFlavorTags && log.flavorTags.isNotEmpty()) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                log.flavorTags.forEach { tag ->
+                    FlavorTagChip(tag = tag)
+                }
+            }
+        }
+
+        // Barista Quick Metrics & Rating Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val grindFormatted = String.format(Locale.ROOT, "%.1f", log.grindSize)
+                BaristaMetricBadge(label = "GRIND", value = grindFormatted)
+
+                val grams = if (log.doubleGrams > 0) log.doubleGrams else log.singleGrams
+                if (grams > 0) {
+                    val gramsFormatted = String.format(Locale.ROOT, "%.1f", grams)
+                    BaristaMetricBadge(label = "DOSE", value = gramsFormatted, unit = "g")
                 }
             }
 
-            // Expanded Content
-            AnimatedVisibility(visible = isExpanded) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(bottom = 12.dp),
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (log.hasRating) {
+                    CoffeeBeanRating(
+                        rating = log.rating,
+                        beanSize = 14.dp,
+                        modifier = Modifier.padding(end = 4.dp)
                     )
+                }
+                IconButton(
+                    onClick = onToggleExpand,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.rotate(rotation),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
 
-                    // Conditional Blend Composition
-                    if (log.hasBlendSettings) {
-                        CardSection(title = "Blend Composition") {
-                            BlendCompositionBar(
-                                arabica = log.arabicaPercentage,
-                                robusta = log.robustaPercentage,
-                                excelsa = log.excelsaPercentage,
-                                liberica = log.libericaPercentage
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
+        // Expanded Content
+        AnimatedVisibility(visible = isExpanded) {
+            Column(modifier = Modifier.padding(top = 16.dp)) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                )
+
+                // Blend Composition
+                if (log.hasBlendSettings) {
+                    CardSection(title = "Mischungs-Verhältnis") {
+                        BlendCompositionBar(
+                            arabica = log.arabicaPercentage,
+                            robusta = log.robustaPercentage,
+                            excelsa = log.excelsaPercentage,
+                            liberica = log.libericaPercentage
+                        )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-                    // Conditional Sensory Profile
-                    if (log.hasSensoryProfile) {
-                        CardSection(title = stringResource(R.string.sensory_profile)) {
-                            SensoryRadarChart(
-                                sweetness = log.sweetness,
-                                acidity = log.acidity,
-                                body = log.body,
-                                bitterness = log.bitterness,
-                                sweetnessLabel = stringResource(R.string.sweetness),
-                                acidityLabel = stringResource(R.string.acidity),
-                                bodyLabel = stringResource(R.string.body),
-                                bitternessLabel = stringResource(R.string.bitterness)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
+                // Sensory Profile Radar
+                if (log.hasSensoryProfile) {
+                    CardSection(title = stringResource(R.string.sensory_profile)) {
+                        SensoryRadarChart(
+                            sweetness = log.sweetness,
+                            acidity = log.acidity,
+                            body = log.body,
+                            bitterness = log.bitterness,
+                            sweetnessLabel = stringResource(R.string.sweetness),
+                            acidityLabel = stringResource(R.string.acidity),
+                            bodyLabel = stringResource(R.string.body),
+                            bitternessLabel = stringResource(R.string.bitterness)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-                    // Conditional Flavor Tags
-                    if (log.hasFlavorTags && log.flavorTags.isNotEmpty()) {
-                        CardSection(title = stringResource(R.string.flavor_tags)) {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                log.flavorTags.forEach { tag ->
-                                    FlavorTagChip(tag = tag)
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
+                // Barista Notes
+                if (log.notes.isNotEmpty()) {
+                    CardSection(title = stringResource(R.string.notes)) {
+                        Text(
+                            text = log.notes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-                    // Notes
-                    if (log.notes.isNotEmpty()) {
-                        CardSection(title = stringResource(R.string.notes)) {
-                            Text(
-                                text = log.notes,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    // Actions
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                // Actions
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        TextButton(
-                            onClick = onDelete,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelMedium)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        FilledTonalButton(
-                            onClick = onEdit,
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.edit), style = MaterialTheme.typography.labelMedium)
-                        }
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelMedium)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    FilledTonalButton(
+                        onClick = onEdit,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.edit), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -459,9 +449,9 @@ private fun CardSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
@@ -475,13 +465,3 @@ private fun CardSection(
         }
     }
 }
-
-@Composable
-fun QuickStat(icon: ImageVector, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.outline)
-        Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-
