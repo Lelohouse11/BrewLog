@@ -297,4 +297,9 @@
     <string name="cd_clear">Clear</string>
     <string name="cd_coffee_bean_icon">Coffee bean icon</string>
     <string name="error_field_required">This field is required</string>
+    <string name="select_grams_step">Select Dose Step Size</string>
+    <string name="select_grind_step">Select Grind Step Size</string>
+    <string name="import_success">Data imported successfully!</string>
+    <string name="import_error">Failed to import data.</string>
+    <string name="export_success">Data exported successfully!</string>
 </resources>

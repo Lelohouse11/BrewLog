@@ -297,4 +297,9 @@
     <string name="cd_clear">Löschen</string>
     <string name="cd_coffee_bean_icon">Kaffeebohnen-Icon</string>
     <string name="error_field_required">Dieses Feld ist erforderlich</string>
+    <string name="select_grams_step">Dosis-Schrittweite wählen</string>
+    <string name="select_grind_step">Mahlgrad-Schrittweite wählen</string>
+    <string name="import_success">Daten erfolgreich importiert!</string>
+    <string name="import_error">Fehler beim Importieren der Daten.</string>
+    <string name="export_success">Daten erfolgreich exportiert!</string>
 </resources>

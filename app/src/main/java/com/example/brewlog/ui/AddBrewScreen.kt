@@ -61,7 +61,7 @@ fun AddBrewScreen(
 
     // Optional: Rating
     var hasRating by remember { mutableStateOf(existingLog?.hasRating ?: false) }
-    var rating by remember { mutableStateOf(existingLog?.rating?.toFloat() ?: 5f) }
+    var rating by remember { mutableFloatStateOf(existingLog?.rating?.toFloat() ?: 5f) }
     
     // Optional: Blend Settings
     var hasBlendSettings by remember { mutableStateOf(existingLog?.hasBlendSettings ?: false) }
@@ -79,10 +79,10 @@ fun AddBrewScreen(
     
     // Optional: Sensory Profile (1-5)
     var hasSensoryProfile by remember { mutableStateOf(existingLog?.hasSensoryProfile ?: false) }
-    var sweetness by remember { mutableStateOf(existingLog?.sweetness?.toFloat() ?: 3f) }
-    var acidity by remember { mutableStateOf(existingLog?.acidity?.toFloat() ?: 3f) }
-    var body by remember { mutableStateOf(existingLog?.body?.toFloat() ?: 3f) }
-    var bitterness by remember { mutableStateOf(existingLog?.bitterness?.toFloat() ?: 3f) }
+    var sweetness by remember { mutableFloatStateOf(existingLog?.sweetness?.toFloat() ?: 3f) }
+    var acidity by remember { mutableFloatStateOf(existingLog?.acidity?.toFloat() ?: 3f) }
+    var body by remember { mutableFloatStateOf(existingLog?.body?.toFloat() ?: 3f) }
+    var bitterness by remember { mutableFloatStateOf(existingLog?.bitterness?.toFloat() ?: 3f) }
     
     // Optional: Flavor Tags
     var hasFlavorTags by remember { mutableStateOf(existingLog?.hasFlavorTags ?: false) }

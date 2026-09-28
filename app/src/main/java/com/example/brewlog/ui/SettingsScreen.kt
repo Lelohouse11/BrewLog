@@ -2,6 +2,7 @@ package com.example.brewlog.ui
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -36,6 +37,7 @@ import com.example.brewlog.R
 import com.example.brewlog.data.ThemeMode
 import com.example.brewlog.ui.components.CremaGlassCard
 import com.example.brewlog.ui.theme.*
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.abs
@@ -57,6 +59,17 @@ fun SettingsScreen(
     val showGramsStepDialog = remember { mutableStateOf(false) }
     val showGrindStepDialog = remember { mutableStateOf(false) }
 
+    val importSuccessMsg = stringResource(R.string.import_success)
+    val importErrorMsg = stringResource(R.string.import_error)
+    val exportSuccessMsg = stringResource(R.string.export_success)
+
+    LaunchedEffect(brewViewModel) {
+        brewViewModel.importEvent.collectLatest { success ->
+            val message = if (success) importSuccessMsg else importErrorMsg
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -72,6 +85,7 @@ fun SettingsScreen(
                 context.contentResolver.openOutputStream(it)?.use { outputStream ->
                     outputStream.write(json.toByteArray())
                 }
+                Toast.makeText(context, exportSuccessMsg, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -225,7 +239,7 @@ fun SettingsScreen(
 
             if (showGramsStepDialog.value) {
                 StepSizeSelectionDialog(
-                    title = "Gramm Schrittweite wählen",
+                    title = stringResource(R.string.select_grams_step),
                     currentValue = gramsStepSize,
                     unit = "g",
                     onDismiss = { showGramsStepDialog.value = false },
@@ -238,7 +252,7 @@ fun SettingsScreen(
 
             if (showGrindStepDialog.value) {
                 StepSizeSelectionDialog(
-                    title = "Mahlgrad Schrittweite wählen",
+                    title = stringResource(R.string.select_grind_step),
                     currentValue = grindStepSize,
                     unit = "",
                     onDismiss = { showGrindStepDialog.value = false },

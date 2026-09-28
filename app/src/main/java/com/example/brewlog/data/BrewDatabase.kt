@@ -35,7 +35,7 @@ abstract class BrewDatabase : RoomDatabase() {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, BrewDatabase::class.java, "brew_database")
                     .addMigrations(MIGRATION_11_12, MIGRATION_12_13)
-                    .fallbackToDestructiveMigrationOnDowngrade(true)
+                    .fallbackToDestructiveMigration(true)
                     .build()
                     .also { Instance = it }
             }

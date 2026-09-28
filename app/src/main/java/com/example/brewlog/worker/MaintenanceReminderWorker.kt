@@ -49,12 +49,6 @@ class MaintenanceReminderWorker(
             else -> machine.backflushLimitCycles
         }
 
-        val daysSinceLast = if (lastDone != null) {
-            TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastDone).toInt()
-        } else {
-            0
-        }
-
         val consumptionIntervalDays = if (machine.weeklyConsumption > 0 && limitCycles > 0) {
             (limitCycles / (machine.weeklyConsumption / 7.0)).toInt()
         } else {
@@ -62,12 +56,37 @@ class MaintenanceReminderWorker(
         }
 
         val actualIntervalDays = minOf(maxDays, consumptionIntervalDays)
+
+        val daysSinceLast = if (lastDone != null) {
+            TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastDone).toInt()
+        } else {
+            // If never completed, treat as due
+            actualIntervalDays
+        }
+
         val remainingDays = actualIntervalDays - daysSinceLast
 
         if (remainingDays == 1) {
-            NotificationHelper.sendNotification(applicationContext, "Maintenance Reminder", "$label is due tomorrow!", notificationId)
+            NotificationHelper.sendNotification(
+                applicationContext,
+                "Maintenance Reminder",
+                "$label is due tomorrow!",
+                notificationId
+            )
         } else if (remainingDays == 0) {
-            NotificationHelper.sendNotification(applicationContext, "Maintenance Reminder", "$label is due today!", notificationId + 1000)
+            NotificationHelper.sendNotification(
+                applicationContext,
+                "Maintenance Reminder",
+                "$label is due today!",
+                notificationId + 1000
+            )
+        } else if (remainingDays < 0) {
+            NotificationHelper.sendNotification(
+                applicationContext,
+                "Maintenance Overdue",
+                "$label is overdue!",
+                notificationId + 2000
+            )
         }
     }
 }

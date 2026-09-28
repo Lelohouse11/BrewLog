@@ -83,12 +83,7 @@ class GeminiViewModel : ViewModel() {
                 val response = generativeModel.generateContent(inputContent)
                 val responseText = response.text?.trim() ?: throw Exception("Empty response from AI")
                 
-                // Extraction logic for JSON inside markdown blocks or raw
-                val jsonContent = when {
-                    responseText.contains("```json") -> responseText.substringAfter("```json").substringBefore("```").trim()
-                    responseText.contains("```") -> responseText.substringAfter("```").substringBeforeLast("```").trim()
-                    else -> responseText
-                }
+                val jsonContent = extractJsonContent(responseText)
 
                 val result = json.decodeFromString<ScanResult>(jsonContent)
                 _scanResult.value = result
@@ -103,6 +98,20 @@ class GeminiViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+
+    private fun extractJsonContent(rawText: String): String {
+        var text = when {
+            rawText.contains("```json") -> rawText.substringAfter("```json").substringBefore("```").trim()
+            rawText.contains("```") -> rawText.substringAfter("```").substringBeforeLast("```").trim()
+            else -> rawText
+        }
+        val firstBrace = text.indexOf('{')
+        val lastBrace = text.lastIndexOf('}')
+        if (firstBrace != -1 && lastBrace != -1 && lastBrace > firstBrace) {
+            text = text.substring(firstBrace, lastBrace + 1)
+        }
+        return text
     }
 
     private val _generatedGuide = MutableStateFlow<String?>(null)
@@ -198,11 +207,7 @@ class GeminiViewModel : ViewModel() {
                 val responseText = response.text?.trim() ?: throw Exception("Empty response from AI")
                 Log.d("GeminiViewModel", "AI Raw Response: $responseText")
 
-                val jsonContent = when {
-                    responseText.contains("```json") -> responseText.substringAfter("```json").substringBefore("```").trim()
-                    responseText.contains("```") -> responseText.substringAfter("```").substringBeforeLast("```").trim()
-                    else -> responseText
-                }
+                val jsonContent = extractJsonContent(responseText)
 
                 val result = json.decodeFromString<MachineScanResult>(jsonContent)
                 Log.d("GeminiViewModel", "Parsed Result: $result")

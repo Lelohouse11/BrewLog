@@ -13,9 +13,11 @@ import com.example.brewlog.data.ShotLog
 import com.example.brewlog.data.ShotLogWithBean
 import com.example.brewlog.util.MaintenanceCalculator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -256,6 +258,9 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val _importEvent = MutableSharedFlow<Boolean>()
+    val importEvent = _importEvent.asSharedFlow()
+
     /**
      * Export all app data (BrewLogs, ShotLogs, EspressoMachine) to a JSON string.
      */
@@ -288,6 +293,7 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (!jsonString.isNullOrBlank()) {
                     val content = jsonString
+                    var success = false
                     withContext(Dispatchers.IO) {
                         try {
                             val backup = jsonFormat.decodeFromString<BackupData>(content)
@@ -301,25 +307,39 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                             }
 
+                            val validBeanIds = _allLogs.first().map { it.id }.toSet()
+
                             backup.shotLogs.forEach { shot ->
                                 val mappedBeanId = oldToNewBeanIds[shot.beanId] ?: shot.beanId
-                                brewLogDao.insertShotLog(shot.copy(beanId = mappedBeanId))
+                                if (mappedBeanId in validBeanIds) {
+                                    brewLogDao.insertShotLog(shot.copy(beanId = mappedBeanId))
+                                }
                             }
 
                             backup.espressoMachine?.let { machine ->
                                 brewLogDao.insertEspressoMachine(machine)
                             }
+                            success = true
                         } catch (_: Exception) {
                             // Fallback for legacy backups containing only List<BrewLog>
-                            val legacyLogs: List<BrewLog> = jsonFormat.decodeFromString(content)
-                            legacyLogs.forEach { log ->
-                                brewLogDao.insertLog(log.copy(id = 0))
+                            try {
+                                val legacyLogs: List<BrewLog> = jsonFormat.decodeFromString(content)
+                                legacyLogs.forEach { log ->
+                                    brewLogDao.insertLog(log.copy(id = 0))
+                                }
+                                success = true
+                            } catch (e: Exception) {
+                                Log.e("BrewViewModel", "Legacy import failed: ${e.message}", e)
                             }
                         }
                     }
+                    _importEvent.emit(success)
+                } else {
+                    _importEvent.emit(false)
                 }
             } catch (e: Exception) {
                 Log.e("BrewViewModel", "Error importing data: ${e.message}", e)
+                _importEvent.emit(false)
             }
         }
     }
