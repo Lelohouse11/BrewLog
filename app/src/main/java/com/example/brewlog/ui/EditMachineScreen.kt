@@ -361,8 +361,7 @@ fun EditMachineScreen(
                     placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 5
+                    minLines = 3
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -420,8 +419,7 @@ fun EditMachineScreen(
                     placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 5
+                    minLines = 3
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -479,8 +477,7 @@ fun EditMachineScreen(
                     placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 5
+                    minLines = 3
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(

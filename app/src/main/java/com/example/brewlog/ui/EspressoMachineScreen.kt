@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -479,11 +481,11 @@ fun EspressoMachineScreen(
             }
 
             if (activeGuideTask != null && machine != null) {
-                MaintenanceInstructionSheet(
+                MaintenanceGuideScreen(
                     guideInfo = activeGuideTask!!,
                     machine = machine!!,
                     geminiViewModel = geminiViewModel,
-                    onDismiss = {
+                    onNavigateBack = {
                         geminiViewModel.clearGeneratedGuide()
                         activeGuideTask = null
                     },
@@ -704,15 +706,13 @@ fun MaintenanceCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MaintenanceInstructionSheet(
+private fun MaintenanceGuideScreen(
     guideInfo: GuideTaskInfo,
     machine: EspressoMachine,
     geminiViewModel: GeminiViewModel,
-    onDismiss: () -> Unit,
+    onNavigateBack: () -> Unit,
     onSaveGuide: (String) -> Unit
 ) {
-    val isDark = isAppInDarkTheme()
-    val sheetBg = if (isDark) EspressoGlassBg else VellumGlassBg
     val isGenerating by geminiViewModel.isLoading.collectAsState()
     val aiGeneratedGuide by geminiViewModel.generatedGuide.collectAsState()
 
@@ -732,84 +732,77 @@ private fun MaintenanceInstructionSheet(
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = sheetBg,
-        scrimColor = Color.Black.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp)
-                .fillMaxWidth()
-                .fillMaxHeight(0.85f),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header Row
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    @Suppress("DEPRECATION")
-                    Icon(
-                        Icons.Default.MenuBook,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.instruction_title, guideInfo.title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
-                }
-
-                if (!isEditing && guideText.isNotBlank()) {
-                    IconButton(onClick = { isEditing = true }) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.edit_guide),
-                            tint = MaterialTheme.colorScheme.primary
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = guideInfo.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "${machine.brand} ${machine.model}".trim(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                },
+                actions = {
+                    if (!isEditing && guideText.isNotBlank()) {
+                        IconButton(onClick = { isEditing = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = stringResource(R.string.edit_guide),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
-            }
-
-            Text(
-                text = "${machine.brand} ${machine.model}".trim(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
             )
-
-            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             if (isGenerating) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 3.5.dp,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(48.dp)
                         )
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = stringResource(R.string.generating_guide),
                             style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -819,10 +812,9 @@ private fun MaintenanceInstructionSheet(
                     value = guideText,
                     onValueChange = { guideText = it },
                     placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 160.dp, max = 280.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 8,
+                    shape = RoundedCornerShape(16.dp),
                     textStyle = MaterialTheme.typography.bodyMedium
                 )
 
@@ -864,36 +856,28 @@ private fun MaintenanceInstructionSheet(
                 }
             } else {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                     border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .padding(20.dp)
                     ) {
                         Text(
                             text = guideText.ifEmpty { stringResource(R.string.no_guide_available) },
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = TextUnit(22f, TextUnitType.Sp)
+                            lineHeight = TextUnit(24f, TextUnitType.Sp)
                         )
                     }
                 }
-
-                OutlinedButton(
-                    onClick = onDismiss,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
-                ) {
-                    Text(stringResource(R.string.close), fontWeight = FontWeight.Bold)
-                }
             }
+
+            // Extra Blank Space OUTSIDE / BELOW the card & buttons
+            Spacer(Modifier.height(140.dp))
         }
     }
 }

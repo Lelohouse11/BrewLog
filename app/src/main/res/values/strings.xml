@@ -205,8 +205,8 @@
     <string name="descaling">Descaling</string>
     <string name="backflushing">Group Backflushing &amp; Cleaning</string>
     <string name="mark_completed">Mark as Done</string>
-    <string name="overdue_by_days">Overdue by %d days</string>
-    <string name="days_remaining">%d days remaining</string>
+    <string name="overdue_by_days">Overdue %d d</string>
+    <string name="days_remaining">%d days left</string>
     <string name="due_today">Due Today</string>
     <string name="reset_machine">Reset Machine</string>
     <string name="setup_machine_ai">Auto-Detect Machine Specs with AI</string>

@@ -205,8 +205,8 @@
     <string name="descaling">Entkalkung</string>
     <string name="backflushing">Brühgruppen-Reinigung / Rückspülen</string>
     <string name="mark_completed">Als erledigt markieren</string>
-    <string name="overdue_by_days">Überfällig seit %d Tagen</string>
-    <string name="days_remaining">Noch %d Tage verbleibend</string>
+    <string name="overdue_by_days">%d T. überfällig</string>
+    <string name="days_remaining">Noch %d Tage</string>
     <string name="due_today">Heute fällig</string>
     <string name="reset_machine">Maschine zurücksetzen</string>
     <string name="setup_machine_ai">Maschinendaten per KI suchen &amp; eintragen</string>

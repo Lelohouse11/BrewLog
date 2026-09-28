@@ -54,16 +54,17 @@ A specialty coffee tracking and dial-in application for espresso enthusiasts and
 ### ☕ Espresso Machine & Maintenance Health Hub
 - **Machine Specifications**: Track portafilter diameter ($58\text{mm}$, $54\text{mm}$), steam wand, and integrated grinder specs.
 - **AI Machine Spec Search**: Auto-detect machine specifications using Gemini AI.
-- **Quick-Edit Weekly Consumption**: Quick edit button directly next to weekly cups consumption. Automatically recalculates and previews new maintenance and care intervals.
-- **Intelligent Maintenance Tracking**: Live progress tracking and notification reminders for:
-  - Water Filter Replacement (Wasserfilter-Wechsel)
-  - Backflushing (Rückspülen / Reinigung)
-  - Descaling (Entkalkung)
+- **Quick-Edit Weekly Consumption**: Quick edit button directly next to weekly cups consumption with live interval recalculation preview.
+- **Segmented Glow-Pill Progress Meters**: Tactile 6-segment status pills changing color dynamically (Emerald Green ➔ Amber ➔ Crimson Red).
+- **Localized Date & Time Metrics**: Concise remaining days badge (*"Noch 90 Tage"*) with exact last-done (*"Zuletzt: 15.01.2025"*) and next-due (*"Nächstes Mal fällig: 15.04.2025"*) dates.
+- **AI Step-by-Step Maintenance Guides (Gemini AI)**: Generates 6–10 concise, numbered micro-steps tailored specifically to your machine model and architecture (Thermoblock vs. E61 vs. Dual Boiler) in your display language (German/English).
+- **Full-Screen Maintenance Guide Reader**: Dedicated full-screen reader view with native top bar navigation, scroll-safe bottom padding, and quick pencil edit button.
+- **Custom Guide Editor & Clear Tool**: Enter custom maintenance notes, generate AI guides, or clear instructions with 1 tap in Machine Settings.
 
 ---
 
 ### 💾 Data Portability & Barista Settings
-- **Room Migration v12**: Seamless database updates preserving all user logs and machine settings.
+- **Room Migration v13**: Safe schema migration (`MIGRATION_12_13`) preserving all user logs, shot histories, and custom machine instructions.
 - **JSON Import & Export**: Full database backup and restore functionality integrated into Settings.
 - **Barista Precision Controls**: Configurable step sizes for doses ($0.1\text{g}$, $0.5\text{g}$) and grind sizes with haptic vibration feedback.
 
