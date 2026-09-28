@@ -23,6 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -123,12 +127,12 @@ fun HomeScreen(
 
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.cd_clear_search), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                         }
 
                         IconButton(onClick = { showFilters.value = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.cd_filter), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                         }
                     }
                 }
@@ -152,7 +156,7 @@ fun HomeScreen(
                 ) {
                     Icon(
                         Icons.Default.Add,
-                        contentDescription = "Add Brew Setting",
+                        contentDescription = stringResource(R.string.cd_add_brew_setting),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
@@ -274,9 +278,17 @@ fun BrewLogItem(
         label = "rotation"
     )
 
+    val editActionLabel = stringResource(R.string.edit)
+    val deleteActionLabel = stringResource(R.string.delete)
+
     CremaGlassCard(
         onClick = onToggleExpand,
-        modifier = modifier
+        modifier = modifier.semantics(mergeDescendants = true) {
+            customActions = listOf(
+                CustomAccessibilityAction(label = editActionLabel) { onEdit(); true },
+                CustomAccessibilityAction(label = deleteActionLabel) { onDelete(); true }
+            )
+        }
     ) {
         Column(
             modifier = Modifier.animateContentSize(
@@ -368,11 +380,11 @@ fun BrewLogItem(
                 }
                 IconButton(
                     onClick = onToggleExpand,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.minimumInteractiveComponentSize().size(48.dp)
                 ) {
                     Icon(
                         Icons.Default.ExpandMore,
-                        contentDescription = null,
+                        contentDescription = stringResource(if (isExpanded) R.string.cd_collapse else R.string.cd_expand),
                         modifier = Modifier.rotate(rotation),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -478,7 +490,8 @@ private fun CardSection(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.semantics { heading() }
             )
             Spacer(modifier = Modifier.height(8.dp))
             content()

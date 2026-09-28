@@ -279,4 +279,22 @@
     <string name="diag_low_strength_desc">Flavor is balanced, but the body is watery. Reduce yield to shorten brew ratio.</string>
     <string name="diag_inconclusive">Inconclusive Shot</string>
     <string name="diag_inconclusive_desc">Recipe parameters conflict with flavor evaluation. Keep current settings and pull a verification shot.</string>
+
+    <!-- Accessibility Content Descriptions -->
+    <string name="cd_clear_search">Clear search text</string>
+    <string name="cd_filter">Filter options</string>
+    <string name="cd_add_brew_setting">Add new coffee bean</string>
+    <string name="cd_options">More options</string>
+    <string name="cd_decrease">Decrease %s</string>
+    <string name="cd_increase">Increase %s</string>
+    <string name="cd_decrease_value">Decrease value</string>
+    <string name="cd_increase_value">Increase value</string>
+    <string name="cd_rating">Rating: %1$d of %2$d</string>
+    <string name="cd_sensory_profile">Flavor profile: Sweetness %1$d of 5, Acidity %2$d of 5, Body %3$d of 5, Bitterness %4$d of 5</string>
+    <string name="cd_calendar">Open calendar</string>
+    <string name="cd_expand">Expand details</string>
+    <string name="cd_collapse">Collapse details</string>
+    <string name="cd_clear">Clear</string>
+    <string name="cd_coffee_bean_icon">Coffee bean icon</string>
+    <string name="error_field_required">This field is required</string>
 </resources>

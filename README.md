@@ -70,6 +70,22 @@ A specialty coffee tracking and dial-in application for espresso enthusiasts and
 
 ---
 
+## ♿ Accessibility & Inclusivity (WCAG 2.1 AA & Material 3)
+
+BrewLog is built with first-class accessibility support to ensure an inclusive experience for all coffee enthusiasts, including users with visual or motor impairments:
+
+- **Screen Reader First (Google TalkBack)**:
+  - **Localized Content Descriptions**: All icons, clear search triggers, filter options, navigation elements, and steppers feature fully localized `contentDescription`s in German and English.
+  - **Custom Canvas Semantics**: Custom visual components like `CoffeeBeanRating` (*"Bewertung: 8 von 10"*) and `SensoryRadarChart` (*"Geschmacksprofil: Süße 4 von 5, Säure 3 von 5..."*) export complete semantic text summaries to TalkBack.
+  - **Merge Descendants Card Semantics**: Clickable coffee cards merge inner roaster names, metrics, and ratings into cohesive, single-swipe summaries.
+  - **Custom Accessibility Actions (`CustomAccessibilityAction`)**: Coffee cards support direct *"Bearbeiten"* (Edit) and *"Löschen"* (Delete) actions accessible directly from TalkBack's local context menu.
+- **Accessible Touch Targets**: All interactive buttons meet or exceed the recommended **48 × 48 dp** touch target size (`minimumInteractiveComponentSize`).
+- **Screen Reader Navigation Headings (`heading()`)**: Section titles across all screens, forms, and bottom sheets are tagged with `heading()` semantics for quick gesture navigation.
+- **Live Regions (`LiveRegionMode.Polite`)**: The live extraction timer in Dial-In dynamically announces timer progress to TalkBack.
+- **Accessible Forms & Validation**: Input fields feature explicit `supportingText` error announcements and `ImeAction.Next` keyboard navigation.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **UI Framework:** Jetpack Compose (Material 3 Expressive)

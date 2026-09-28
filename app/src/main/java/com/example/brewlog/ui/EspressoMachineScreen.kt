@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -176,12 +178,12 @@ fun EspressoMachineScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.machine_base_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.machine_base_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
                             }
 
                             Box {
-                                IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.primary)
+                                IconButton(onClick = { showMenu = true }, modifier = Modifier.minimumInteractiveComponentSize().size(48.dp)) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_options), tint = MaterialTheme.colorScheme.primary)
                                 }
                                 DropdownMenu(
                                     expanded = showMenu,
@@ -223,7 +225,7 @@ fun EspressoMachineScreen(
                             ) {
                                 AsyncImage(
                                     model = currentMachine.photoUri,
-                                    contentDescription = "Machine Photo",
+                                    contentDescription = stringResource(R.string.machine_photo),
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
@@ -259,7 +261,7 @@ fun EspressoMachineScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Build, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.maintenance_tracking), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.maintenance_tracking), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
                         }
 
                         Spacer(Modifier.height(4.dp))
@@ -358,7 +360,7 @@ fun EspressoMachineScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.setup_machine_ai), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.setup_machine_ai), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
                         }
                     },
                     text = {
@@ -969,7 +971,7 @@ fun QuickEditConsumptionDialog(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     ) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                        Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease_value))
                     }
 
                     OutlinedTextField(
@@ -992,7 +994,7 @@ fun QuickEditConsumptionDialog(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase_value))
                     }
                 }
 

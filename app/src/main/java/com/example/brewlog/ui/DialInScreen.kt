@@ -37,6 +37,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -413,7 +418,12 @@ private fun SetupStep(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.beans_basket_choice), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.beans_basket_choice),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() }
+            )
         }
 
         Spacer(Modifier.height(14.dp))
@@ -800,12 +810,19 @@ private fun ShotStep(
                     color = indicatorColor
                 )
 
+                val secondsFormatted = String.format(Locale.ROOT, "%.1f", seconds)
+                val secondsLabel = stringResource(R.string.seconds_short)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.graphicsLayer {
-                        scaleX = targetScale
-                        scaleY = targetScale
-                    }
+                    modifier = Modifier
+                        .graphicsLayer {
+                            scaleX = targetScale
+                            scaleY = targetScale
+                        }
+                        .semantics(mergeDescendants = true) {
+                            liveRegion = LiveRegionMode.Polite
+                            contentDescription = "$secondsFormatted $secondsLabel"
+                        }
                 ) {
                     Text(
                         text = String.format(Locale.ROOT, "%.1f", seconds),
@@ -886,7 +903,12 @@ private fun ShotStep(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.espresso_yield), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.espresso_yield),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() }
+            )
         }
 
         Spacer(Modifier.height(12.dp))
@@ -977,7 +999,12 @@ private fun ResultStep(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.ThumbUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.sensory_evaluation), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.sensory_evaluation),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() }
+            )
         }
 
         Spacer(Modifier.height(8.dp))

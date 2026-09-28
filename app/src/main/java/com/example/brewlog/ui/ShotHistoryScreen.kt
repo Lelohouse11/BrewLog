@@ -190,7 +190,7 @@ fun ShotHistoryScreen(
                                 IconButton(onClick = { searchQuery = "" }) {
                                     Icon(
                                         Icons.Default.Clear,
-                                        contentDescription = "Clear",
+                                        contentDescription = stringResource(R.string.cd_clear_search),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -201,7 +201,7 @@ fun ShotHistoryScreen(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         Icons.Default.FilterList,
-                                        contentDescription = "Filter",
+                                        contentDescription = stringResource(R.string.cd_filter),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(22.dp)
                                     )
@@ -423,7 +423,7 @@ fun ShotLogCard(
 
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        contentDescription = stringResource(if (isExpanded) R.string.cd_collapse else R.string.cd_expand),
                         tint = MaterialTheme.colorScheme.secondary
                     )
                 }

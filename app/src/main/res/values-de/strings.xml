@@ -279,4 +279,22 @@
     <string name="diag_low_strength_desc">Geschmack ist ausgewogen, aber wässrig. Espresso-Menge (Yield) reduzieren, um das Brühverhältnis zu verkürzen.</string>
     <string name="diag_inconclusive">Unklare Extraktion</string>
     <string name="diag_inconclusive_desc">Parameter widersprechen der geschmacklichen Bewertung. Einstellungen beibehalten und Prüf-Shot ziehen.</string>
+
+    <!-- Accessibility Content Descriptions -->
+    <string name="cd_clear_search">Suchtext löschen</string>
+    <string name="cd_filter">Filteroptionen</string>
+    <string name="cd_add_brew_setting">Neue Kaffeebohne hinzufügen</string>
+    <string name="cd_options">Weitere Optionen</string>
+    <string name="cd_decrease">%s verringern</string>
+    <string name="cd_increase">%s erhöhen</string>
+    <string name="cd_decrease_value">Wert verringern</string>
+    <string name="cd_increase_value">Wert erhöhen</string>
+    <string name="cd_rating">Bewertung: %1$d von %2$d</string>
+    <string name="cd_sensory_profile">Geschmacksprofil: Süße %1$d von 5, Säure %2$d von 5, Körper %3$d von 5, Bitterkeit %4$d von 5</string>
+    <string name="cd_calendar">Kalender öffnen</string>
+    <string name="cd_expand">Details ausklappen</string>
+    <string name="cd_collapse">Details einklappen</string>
+    <string name="cd_clear">Löschen</string>
+    <string name="cd_coffee_bean_icon">Kaffeebohnen-Icon</string>
+    <string name="error_field_required">Dieses Feld ist erforderlich</string>
 </resources>

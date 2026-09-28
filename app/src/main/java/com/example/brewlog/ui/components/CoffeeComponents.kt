@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.brewlog.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -127,6 +129,17 @@ fun CremaGlassCard(
     val borderColor = if (isDark) EspressoGlassBorder else VellumGlassBorder
     val glowColor = if (isDark) CremaAmber else CremaAmberDark
 
+    val baseModifier = if (onClick != null) {
+        modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .cremaGlow(color = glowColor.copy(alpha = 0.35f), borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f)
+    } else {
+        modifier
+            .fillMaxWidth()
+            .cremaGlow(color = glowColor.copy(alpha = 0.35f), borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f)
+    }
+
     Surface(
         onClick = onClick ?: {},
         enabled = onClick != null,
@@ -134,9 +147,7 @@ fun CremaGlassCard(
         color = bgColor,
         border = BorderStroke(1.2.dp, borderColor),
         shadowElevation = 6.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .cremaGlow(color = glowColor.copy(alpha = 0.35f), borderRadius = 24.dp, glowRadius = 6.dp, alpha = 0.25f)
+        modifier = baseModifier
     ) {
         Column(
             modifier = Modifier.padding(contentPadding),
@@ -337,7 +348,7 @@ fun FloatingGlassNavigationBar(
                 NavGlassItem(
                     selected = currentDestination == "settings",
                     onClick = onNavigateToSettings,
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp)) },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings), modifier = Modifier.size(20.dp)) },
                     label = "Optionen"
                 )
             }
@@ -488,9 +499,12 @@ fun CoffeeBeanRating(
     inactiveColor: Color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
 ) {
     val activeBeans = if (maxRating == 10) (rating + 1) / 2 else rating
+    val cdText = stringResource(R.string.cd_rating, rating, maxRating)
 
     Row(
-        modifier = modifier,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = cdText
+        },
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -901,10 +915,21 @@ fun SensoryRadarChart(
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
     )
 
+    val cdText = stringResource(
+        R.string.cd_sensory_profile,
+        sweetness.coerceIn(1, 5),
+        acidity.coerceIn(1, 5),
+        body.coerceIn(1, 5),
+        bitterness.coerceIn(1, 5)
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(210.dp),
+            .height(210.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = cdText
+            },
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -1144,7 +1169,10 @@ fun NumberStepper(
             shape = RoundedCornerShape(12.dp),
             interactionSource = minusInteractionSource
         ) {
-            Icon(Icons.Default.Remove, contentDescription = "Decrease $stepSize")
+            Icon(
+                Icons.Default.Remove,
+                contentDescription = stringResource(R.string.cd_decrease, label.ifEmpty { stringResource(R.string.dose_metric) })
+            )
         }
 
         OutlinedTextField(
@@ -1178,7 +1206,10 @@ fun NumberStepper(
             shape = RoundedCornerShape(12.dp),
             interactionSource = plusInteractionSource
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Increase $stepSize")
+            Icon(
+                Icons.Default.Add,
+                contentDescription = stringResource(R.string.cd_increase, label.ifEmpty { stringResource(R.string.dose_metric) })
+            )
         }
     }
 }
@@ -1529,7 +1560,7 @@ fun RoastDatePickerField(
                 IconButton(onClick = { showDatePicker = true }) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = "Calendar",
+                        contentDescription = stringResource(R.string.cd_calendar),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
