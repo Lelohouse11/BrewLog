@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.brewlog.R
-import com.example.brewlog.ui.components.CremaGlassCard
+import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
 
 private val ROAST_OPTIONS = listOf("Light", "Medium", "Dark")
@@ -97,7 +97,10 @@ fun FilterBottomSheet(
 
         // Sorting Section
         CremaGlassFilterCard(title = stringResource(R.string.sort_by)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 CremaFilterChip(
                     selected = sortOption == SortOption.NAME,
                     onClick = { onSortChange(SortOption.NAME) },
@@ -107,6 +110,11 @@ fun FilterBottomSheet(
                     selected = sortOption == SortOption.RATING,
                     onClick = { onSortChange(SortOption.RATING) },
                     label = stringResource(R.string.sort_rating)
+                )
+                CremaFilterChip(
+                    selected = sortOption == SortOption.ROASTERY,
+                    onClick = { onSortChange(SortOption.ROASTERY) },
+                    label = stringResource(R.string.sort_roastery)
                 )
             }
         }
@@ -162,8 +170,9 @@ fun FilterBottomSheet(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FLAVOR_OPTIONS.forEach { tag ->
-                    CremaFilterChip(
-                        selected = filterState.selectedFlavorTags.contains(tag),
+                    FlavorTagChip(
+                        tag = tag,
+                        isSelected = filterState.selectedFlavorTags.contains(tag),
                         onClick = {
                             val newSet = if (filterState.selectedFlavorTags.contains(tag)) {
                                 filterState.selectedFlavorTags - tag
@@ -171,8 +180,7 @@ fun FilterBottomSheet(
                                 filterState.selectedFlavorTags + tag
                             }
                             onFilterChange(filterState.copy(selectedFlavorTags = newSet))
-                        },
-                        label = tag
+                        }
                     )
                 }
             }
@@ -199,7 +207,7 @@ fun FilterBottomSheet(
 }
 
 @Composable
-private fun CremaGlassFilterCard(
+fun CremaGlassFilterCard(
     title: String,
     content: @Composable () -> Unit
 ) {
@@ -253,7 +261,9 @@ fun CremaFilterChip(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }

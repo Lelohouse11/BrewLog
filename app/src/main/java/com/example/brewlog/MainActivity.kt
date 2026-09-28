@@ -120,8 +120,7 @@ class MainActivity : AppCompatActivity() {
                                 HomeScreen(
                                     viewModel = viewModel,
                                     onNavigateToAddBrew = { navController.navigate("add_brew") },
-                                    onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") },
-                                    onNavigateToSettings = { navController.navigate("settings") }
+                                    onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") }
                                 )
                             }
                             composable("espresso_machine") {
@@ -154,7 +153,14 @@ class MainActivity : AppCompatActivity() {
                             composable("dial_in") {
                                 DialInScreen(
                                     viewModel = viewModel,
-                                    onNavigateBack = { navController.popBackStack() }
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onShotLogged = {
+                                        navController.navigate("shot_history") {
+                                            popUpTo("home") { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
                                 )
                             }
                             composable(
@@ -169,6 +175,13 @@ class MainActivity : AppCompatActivity() {
                                 DialInScreen(
                                     viewModel = viewModel,
                                     onNavigateBack = { navController.popBackStack() },
+                                    onShotLogged = {
+                                        navController.navigate("shot_history") {
+                                            popUpTo("home") { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
                                     initialBeanId = backStackEntry.arguments?.getInt("beanId"),
                                     initialBasketType = backStackEntry.arguments?.getString("basketType"),
                                     initialDose = backStackEntry.arguments?.getFloat("dose")?.toDouble(),

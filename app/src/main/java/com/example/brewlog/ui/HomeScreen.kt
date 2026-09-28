@@ -32,7 +32,6 @@ import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -158,7 +157,7 @@ fun HomeScreen(
                         modifier = Modifier.size(22.dp)
                     )
                     Text(
-                        text = "Bohne",
+                        text = stringResource(R.string.add_bean_fab),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -172,7 +171,7 @@ fun HomeScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CoffeeEmptyState(
                         title = stringResource(R.string.no_brews_found),
-                        description = "Füge deine erste Specialty Coffee Bohne hinzu"
+                        description = stringResource(R.string.add_first_brew)
                     )
                 }
             } else {
@@ -294,7 +293,7 @@ fun BrewLogItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
             Text(
-                text = log.roaster.ifEmpty { "SPECIALTY ROASTER" }.uppercase(),
+                text = log.roaster.ifEmpty { stringResource(R.string.specialty_roaster_placeholder) }.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 1.2.sp,
@@ -350,12 +349,12 @@ fun BrewLogItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val grindFormatted = String.format(Locale.ROOT, "%.1f", log.grindSize)
-                BaristaMetricBadge(label = "GRIND", value = grindFormatted)
+                BaristaMetricBadge(label = stringResource(R.string.grind_metric), value = grindFormatted)
 
                 val grams = if (log.doubleGrams > 0) log.doubleGrams else log.singleGrams
                 if (grams > 0) {
                     val gramsFormatted = String.format(Locale.ROOT, "%.1f", grams)
-                    BaristaMetricBadge(label = "DOSE", value = gramsFormatted, unit = "g")
+                    BaristaMetricBadge(label = stringResource(R.string.dose_metric), value = gramsFormatted, unit = "g")
                 }
             }
 
@@ -392,7 +391,7 @@ fun BrewLogItem(
 
                 // Blend Composition
                 if (log.hasBlendSettings) {
-                    CardSection(title = "Mischungs-Verhältnis") {
+                    CardSection(title = stringResource(R.string.blend_ratio_title)) {
                         BlendCompositionBar(
                             arabica = log.arabicaPercentage,
                             robusta = log.robustaPercentage,
@@ -500,8 +499,6 @@ fun QuickEditRoastDateDialog(
     val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
     val glowColor = if (isDark) CremaAmber else CremaAmberDark
 
-    val todayStr = remember { LocalDate.now().toString() }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = glassBg,
@@ -538,35 +535,11 @@ fun QuickEditRoastDateDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = roastDateText,
-                        onValueChange = { roastDateText = it },
-                        label = { Text(stringResource(R.string.roast_date)) },
-                        placeholder = { Text(stringResource(R.string.roast_date_placeholder)) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedButton(
-                        onClick = { roastDateText = todayStr },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.height(56.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Today,
-                            contentDescription = stringResource(R.string.today),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.today), fontWeight = FontWeight.Bold)
-                    }
-                }
+                RoastDatePickerField(
+                    value = roastDateText,
+                    onValueChange = { roastDateText = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Surface(
                     shape = RoundedCornerShape(14.dp),

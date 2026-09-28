@@ -59,6 +59,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun DialInScreen(
     viewModel: BrewViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
+    onShotLogged: () -> Unit = {},
     initialBeanId: Int? = null,
     initialBasketType: String? = null,
     initialDose: Double? = null,
@@ -217,6 +218,7 @@ fun DialInScreen(
                             onGrindChange = { grindSize = it },
                             target = target,
                             isRunning = isRunning,
+                            onBackClick = onNavigateBack,
                             onNextClick = { currentStep = 1 }
                         )
 
@@ -253,12 +255,12 @@ fun DialInScreen(
                             onSaveOnly = {
                                 val t = timeElapsed / 1000f
                                 saveShot(viewModel, selectedBeanId, basketType, doseIn, grindSize, yieldOut, t, acidityEval, bitternessEval, bodyEval, notes, false, recommendation)
-                                onNavigateBack()
+                                onShotLogged()
                             },
                             onSaveAndApplySettings = {
                                 val t = timeElapsed / 1000f
                                 saveShot(viewModel, selectedBeanId, basketType, doseIn, grindSize, yieldOut, t, acidityEval, bitternessEval, bodyEval, notes, true, recommendation)
-                                onNavigateBack()
+                                onShotLogged()
                             },
                             onStartNewShot = {
                                 val t = timeElapsed / 1000f
@@ -402,6 +404,7 @@ private fun SetupStep(
     onGrindChange: (String) -> Unit,
     target: ExtractionEngine.ShotTarget?,
     isRunning: Boolean,
+    onBackClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
     val canProceed = selectedBeanId != -1 && doseIn.toFloatOrNull() != null && grindSize.toFloatOrNull() != null
@@ -483,17 +486,39 @@ private fun SetupStep(
                 selected = basketType == "single",
                 onClick = { if (!isRunning) onBasketTypeChange("single") },
                 enabled = !isRunning,
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                icon = {},
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    activeContentColor = MaterialTheme.colorScheme.primary,
+                    inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             ) {
-                Text(stringResource(R.string.single_basket))
+                Text(
+                    text = stringResource(R.string.single_basket),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (basketType == "single") FontWeight.Bold else FontWeight.Medium
+                )
             }
             SegmentedButton(
                 selected = basketType == "double",
                 onClick = { if (!isRunning) onBasketTypeChange("double") },
                 enabled = !isRunning,
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                icon = {},
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    activeContentColor = MaterialTheme.colorScheme.primary,
+                    inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             ) {
-                Text(stringResource(R.string.double_basket))
+                Text(
+                    text = stringResource(R.string.double_basket),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (basketType == "double") FontWeight.Bold else FontWeight.Medium
+                )
             }
         }
 
@@ -564,7 +589,7 @@ private fun SetupStep(
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
-                            text = if (t.isFromHistory) "Bohnen-Historie" else "Standard-Rezept",
+                            text = if (t.isFromHistory) stringResource(R.string.history_basis) else stringResource(R.string.standard_recipe),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = if (t.isFromHistory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
@@ -594,18 +619,32 @@ private fun SetupStep(
 
     Spacer(Modifier.height(8.dp))
 
-    // Next Button
-    Button(
-        onClick = onNextClick,
-        enabled = canProceed,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
+    // Navigation Buttons
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(stringResource(R.string.next_to_shot), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.width(8.dp))
-        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+        OutlinedButton(
+            onClick = onBackClick,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp)
+        ) {
+            Text(stringResource(R.string.back), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        Button(
+            onClick = onNextClick,
+            enabled = canProceed,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp)
+        ) {
+            Text(stringResource(R.string.next_to_shot), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+        }
     }
 }
 

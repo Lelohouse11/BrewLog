@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,11 +38,28 @@ import com.example.brewlog.data.ShotLogWithBean
 import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.BaristaMonospaceFontFamily
 import com.example.brewlog.util.ExtractionEngine
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.example.brewlog.data.BrewLog
+import com.example.brewlog.ui.theme.CremaAmber
+import com.example.brewlog.ui.theme.CremaAmberDark
+import com.example.brewlog.ui.theme.EspressoGlassBg
+import com.example.brewlog.ui.theme.VellumGlassBg
+import com.example.brewlog.ui.theme.isAppInDarkTheme
 import com.example.brewlog.util.getLocalizedDiagnosis
 import com.example.brewlog.util.getLocalizedExplanation
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
+
+enum class ShotSortOption { DATE, QUALITY }
+
+fun ShotLog.qualityScore(): Int {
+    val deviation = abs(acidityEval) + abs(bitternessEval) + abs(bodyEval)
+    return 3 - deviation
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -54,12 +72,50 @@ fun ShotHistoryScreen(
     
     var selectedBeanId by remember { mutableStateOf<Int?>(null) }
     var selectedBasketType by remember { mutableStateOf<String?>(null) }
-    var isFilterExpanded by remember { mutableStateOf(false) }
+    var shotSortOption by remember { mutableStateOf(ShotSortOption.DATE) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showFilterSheet by remember { mutableStateOf(false) }
 
-    val filteredLogs = shotLogs.filter { item ->
-        val beanMatch = (selectedBeanId == null || item.shotLog.beanId == selectedBeanId)
-        val basketMatch = (selectedBasketType == null || item.shotLog.basketType.lowercase() == selectedBasketType)
-        beanMatch && basketMatch
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    val isDark = isAppInDarkTheme()
+
+    val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
+    val glassBorder = if (isDark) CremaAmber.copy(alpha = 0.35f) else CremaAmberDark.copy(alpha = 0.35f)
+    val glowColor = if (isDark) CremaAmber else CremaAmberDark
+
+    val activeFilterCount = (if (selectedBeanId != null) 1 else 0) +
+            (if (selectedBasketType != null) 1 else 0) +
+            (if (shotSortOption != ShotSortOption.DATE) 1 else 0)
+
+    val filteredLogs = remember(shotLogs, beans, selectedBeanId, selectedBasketType, shotSortOption, searchQuery) {
+        shotLogs.filter { item ->
+            val bean = beans.find { it.id == item.shotLog.beanId }
+            val coffeeName = bean?.coffeeName ?: item.beanName
+            val roaster = bean?.roaster ?: ""
+
+            val matchesSearch = searchQuery.isBlank() ||
+                    coffeeName.contains(searchQuery, ignoreCase = true) ||
+                    roaster.contains(searchQuery, ignoreCase = true)
+
+            val beanMatch = (selectedBeanId == null || item.shotLog.beanId == selectedBeanId)
+            val basketMatch = (selectedBasketType == null || item.shotLog.basketType.lowercase() == selectedBasketType)
+
+            matchesSearch && beanMatch && basketMatch
+        }.sortedWith { a, b ->
+            when (shotSortOption) {
+                ShotSortOption.DATE -> b.shotLog.timestamp.compareTo(a.shotLog.timestamp)
+                ShotSortOption.QUALITY -> {
+                    val scoreA = a.shotLog.qualityScore()
+                    val scoreB = b.shotLog.qualityScore()
+                    if (scoreA != scoreB) {
+                        scoreB.compareTo(scoreA)
+                    } else {
+                        b.shotLog.timestamp.compareTo(a.shotLog.timestamp)
+                    }
+                }
+            }
+        }
     }
 
     Surface(
@@ -72,148 +128,124 @@ fun ShotHistoryScreen(
                 .statusBarsPadding()
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Collapsible Crema Glass Filter Bar
-                val selectedBeanName = beans.find { it.id == selectedBeanId }?.coffeeName
-                val activeFilterText = buildString {
-                    append(selectedBeanName ?: stringResource(R.string.all_beans))
-                    if (selectedBasketType != null) {
-                        append(" • ")
-                        append(if (selectedBasketType == "single") stringResource(R.string.single_basket) else stringResource(R.string.double_basket))
-                    }
-                }
-                val hasActiveFilter = selectedBeanId != null || selectedBasketType != null
-
-                CremaGlassCard(
-                    onClick = { isFilterExpanded = !isFilterExpanded },
-                    shape = RoundedCornerShape(20.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                // Seamless Crema Glass Search Header with Radiant Glow (Matching HomeScreen)
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 12.dp, bottom = 4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = glassBg,
+                        border = BorderStroke(1.2.dp, glassBorder),
+                        shadowElevation = 6.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .cremaGlow(color = glowColor, borderRadius = 24.dp, glowRadius = 5.dp, alpha = 0.2f)
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.FilterAlt,
+                                Icons.Default.Search,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(22.dp)
                             )
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.filters),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = activeFilterText,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    maxLines = 1
-                                )
-                            }
-                        }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            if (hasActiveFilter) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = CircleShape
-                                ) {
+                            Spacer(Modifier.width(8.dp))
+
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = {
                                     Text(
-                                        text = "Aktiv",
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
+                                        stringResource(R.string.search_placeholder),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                singleLine = true,
+                                maxLines = 1,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent
+                                ),
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "Clear",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
 
-                            Icon(
-                                imageVector = if (isFilterExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isFilterExpanded) "Einklappen" else "Ausklappen",
-                                tint = MaterialTheme.colorScheme.secondary
-                            )
+                            IconButton(onClick = { showFilterSheet = true }) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.FilterList,
+                                        contentDescription = "Filter",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    if (activeFilterCount > 0) {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = CircleShape,
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .align(Alignment.TopEnd)
+                                        ) {}
+                                    }
+                                }
+                            }
                         }
                     }
+                }
 
-                    AnimatedVisibility(
-                        visible = isFilterExpanded,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
+                if (showFilterSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showFilterSheet = false },
+                        sheetState = sheetState,
+                        containerColor = if (isDark) EspressoGlassBg else VellumGlassBg,
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     ) {
-                        Column(
-                            modifier = Modifier.padding(top = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                            // Bean Selection
-                            Text("Bohne auswählen", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                CremaFilterChip(
-                                    selected = selectedBeanId == null,
-                                    onClick = { selectedBeanId = null },
-                                    label = stringResource(R.string.all_beans)
-                                )
-                                beans.forEach { bean ->
-                                    CremaFilterChip(
-                                        selected = selectedBeanId == bean.id,
-                                        onClick = { selectedBeanId = bean.id },
-                                        label = bean.coffeeName
-                                    )
+                        ShotHistoryFilterBottomSheet(
+                            beans = beans,
+                            selectedBeanId = selectedBeanId,
+                            selectedBasketType = selectedBasketType,
+                            shotSortOption = shotSortOption,
+                            onBeanSelected = { selectedBeanId = it },
+                            onBasketSelected = { selectedBasketType = it },
+                            onSortSelected = { shotSortOption = it },
+                            onReset = {
+                                selectedBeanId = null
+                                selectedBasketType = null
+                                shotSortOption = ShotSortOption.DATE
+                            },
+                            onApply = {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) showFilterSheet = false
                                 }
                             }
-
-                            // Basket Selection
-                            Text("Siebträger / Basket", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                CremaFilterChip(
-                                    selected = selectedBasketType == null,
-                                    onClick = { selectedBasketType = null },
-                                    label = "Alle Siebe"
-                                )
-                                CremaFilterChip(
-                                    selected = selectedBasketType == "single",
-                                    onClick = { selectedBasketType = "single" },
-                                    label = stringResource(R.string.single_basket)
-                                )
-                                CremaFilterChip(
-                                    selected = selectedBasketType == "double",
-                                    onClick = { selectedBasketType = "double" },
-                                    label = stringResource(R.string.double_basket)
-                                )
-                            }
-
-                            if (hasActiveFilter) {
-                                TextButton(
-                                    onClick = {
-                                        selectedBeanId = null
-                                        selectedBasketType = null
-                                    },
-                                    modifier = Modifier.align(Alignment.End)
-                                ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Filter zurücksetzen", style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
+                        )
                     }
                 }
 
@@ -221,7 +253,7 @@ fun ShotHistoryScreen(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CoffeeEmptyState(
                             title = stringResource(R.string.no_shots_logged),
-                            description = "Starte deinen ersten Dial-In Brühvorgang"
+                            description = stringResource(R.string.start_first_dial_in)
                         )
                     }
                 } else {
@@ -685,3 +717,214 @@ private data class BadgeConfig(
     val label: String,
     val icon: ImageVector
 )
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShotHistoryFilterBottomSheet(
+    beans: List<BrewLog>,
+    selectedBeanId: Int?,
+    selectedBasketType: String?,
+    shotSortOption: ShotSortOption,
+    onBeanSelected: (Int?) -> Unit,
+    onBasketSelected: (String?) -> Unit,
+    onSortSelected: (ShotSortOption) -> Unit,
+    onReset: () -> Unit,
+    onApply: () -> Unit
+) {
+    val activeFilterCount = (if (selectedBeanId != null) 1 else 0) +
+            (if (selectedBasketType != null) 1 else 0) +
+            (if (shotSortOption != ShotSortOption.DATE) 1 else 0)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Top Header Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FilterAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = stringResource(R.string.filters),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (activeFilterCount > 0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = CircleShape
+                    ) {
+                        Text(
+                            text = "$activeFilterCount",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            TextButton(
+                onClick = onReset,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.reset_all), style = MaterialTheme.typography.labelMedium)
+            }
+        }
+
+        // Sorting Section
+        CremaGlassFilterCard(title = stringResource(R.string.sort_by)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CremaFilterChip(
+                    selected = shotSortOption == ShotSortOption.DATE,
+                    onClick = { onSortSelected(ShotSortOption.DATE) },
+                    label = stringResource(R.string.sort_date)
+                )
+                CremaFilterChip(
+                    selected = shotSortOption == ShotSortOption.QUALITY,
+                    onClick = { onSortSelected(ShotSortOption.QUALITY) },
+                    label = stringResource(R.string.sort_quality)
+                )
+            }
+        }
+
+        // Bean Selection (Dropbox / Dropdown Menu)
+        CremaGlassFilterCard(title = stringResource(R.string.filter_by_bean)) {
+            var expanded by remember { mutableStateOf(false) }
+            val selectedBean = beans.find { it.id == selectedBeanId }
+            val displayText = selectedBean?.let { "${it.coffeeName} (${it.roaster})" } ?: stringResource(R.string.all_beans)
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it }
+            ) {
+                OutlinedTextField(
+                    value = displayText,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.filter_by_bean)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
+                        .fillMaxWidth()
+                )
+
+                val isDark = isAppInDarkTheme()
+                val dropdownBg = if (isDark) EspressoGlassBg else VellumGlassBg
+                val dropdownBorder = if (isDark) CremaAmber.copy(alpha = 0.3f) else CremaAmberDark.copy(alpha = 0.3f)
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = dropdownBg,
+                    border = BorderStroke(1.dp, dropdownBorder)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = stringResource(R.string.all_beans),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = if (selectedBeanId == null) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            onBeanSelected(null)
+                            expanded = false
+                        }
+                    )
+
+                    beans.forEach { bean ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(
+                                        text = bean.coffeeName,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = if (selectedBeanId == bean.id) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                    if (bean.roaster.isNotEmpty()) {
+                                        Text(
+                                            text = bean.roaster,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            },
+                            onClick = {
+                                onBeanSelected(bean.id)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Basket Size Section
+        CremaGlassFilterCard(title = stringResource(R.string.filter_by_basket)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                CremaFilterChip(
+                    selected = selectedBasketType == null,
+                    onClick = { onBasketSelected(null) },
+                    label = stringResource(R.string.all_baskets)
+                )
+                CremaFilterChip(
+                    selected = selectedBasketType == "single",
+                    onClick = { onBasketSelected("single") },
+                    label = stringResource(R.string.single_basket)
+                )
+                CremaFilterChip(
+                    selected = selectedBasketType == "double",
+                    onClick = { onBasketSelected("double") },
+                    label = stringResource(R.string.double_basket)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        Button(
+            onClick = onApply,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Text(stringResource(R.string.apply_filters), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}

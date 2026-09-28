@@ -17,6 +17,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CoffeeMaker
 import androidx.compose.material.icons.filled.History
@@ -27,12 +29,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
@@ -1074,7 +1083,9 @@ fun FlavorTagChip(
                 text = tag,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                color = if (isSelected) bgColor else textColor
+                color = if (isSelected) bgColor else textColor,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }
@@ -1286,4 +1297,263 @@ private data class BlendVariety(
     val percentage: Int,
     val color: Color
 )
+
+/**
+ * Premium AI Feature Hero Button with glowing radiant aura and AI Feature badge.
+ * Designed to make unique AI capabilities (such as label scanning and machine auto-detection)
+ * stand out as key features.
+ */
+@Composable
+fun AiFeatureButton(
+    onClick: () -> Unit,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    icon: ImageVector = Icons.Default.AutoAwesome,
+    isLoading: Boolean = false,
+    loadingText: String? = null,
+    enabled: Boolean = true
+) {
+    val isDark = isAppInDarkTheme()
+    val haptic = LocalHapticFeedback.current
+
+    val gradientBrush = if (isDark) {
+        Brush.horizontalGradient(
+            colors = listOf(
+                Color(0xFF281C28),
+                Color(0xFF5E2750),
+                Color(0xFF8E44AD),
+                Color(0xFFC88A58)
+            )
+        )
+    } else {
+        Brush.horizontalGradient(
+            colors = listOf(
+                Color(0xFFE2A86B),
+                Color(0xFFBA68C8),
+                Color(0xFF8E44AD),
+                Color(0xFFC88A58)
+            )
+        )
+    }
+
+    val glowColor = if (isDark) Color(0xFFBA68C8) else Color(0xFFE2A86B)
+
+    Surface(
+        onClick = {
+            if (!isLoading && enabled) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            }
+        },
+        enabled = enabled && !isLoading,
+        shape = RoundedCornerShape(20.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.5.dp, glowColor.copy(alpha = 0.7f)),
+        shadowElevation = 8.dp,
+        modifier = modifier
+            .fillMaxWidth()
+            .cremaGlow(color = glowColor, borderRadius = 20.dp, glowRadius = 8.dp, alpha = 0.4f)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(brush = gradientBrush)
+                .padding(horizontal = 18.dp, vertical = 14.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Top Icon & Title Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.25f)
+                    ) {
+                        Box(modifier = Modifier.padding(6.dp)) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    if (isLoading) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                text = loadingText ?: stringResource(R.string.scanning_label),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                if (!isLoading && !subtitle.isNullOrEmpty()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Material 3 Calendar DatePicker Dialog for selecting roast date.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CoffeeDatePickerDialog(
+    initialDateString: String,
+    onDateSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val initialMillis = remember(initialDateString) {
+        try {
+            if (initialDateString.isNotEmpty()) {
+                val localDate = LocalDate.parse(initialDateString)
+                localDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+            } else {
+                System.currentTimeMillis()
+            }
+        } catch (_: Exception) {
+            System.currentTimeMillis()
+        }
+    }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialMillis,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                // Allow today or past dates up to today
+                return utcTimeMillis <= System.currentTimeMillis() + 86400000L
+            }
+        }
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val date = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.of("UTC"))
+                            .toLocalDate()
+                        onDateSelected(date.toString())
+                    }
+                    onDismiss()
+                }
+            ) {
+                Text(stringResource(R.string.save), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    ) {
+        DatePicker(
+            state = datePickerState,
+            title = {
+                Text(
+                    text = stringResource(R.string.roast_date),
+                    modifier = Modifier.padding(start = 24.dp, top = 16.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        )
+    }
+}
+
+/**
+ * Interactive Roast Date Selection Field with a Calendar Icon and Quick Date Presets.
+ * Tapping the field or calendar icon opens a Material 3 Calendar DatePickerDialog.
+ */
+@Composable
+fun RoastDatePickerField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(R.string.roast_date)
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val formattedDisplayDate = remember(value) {
+        try {
+            if (value.isNotEmpty()) {
+                val parsed = LocalDate.parse(value)
+                val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                parsed.format(formatter)
+            } else ""
+        } catch (_: Exception) {
+            value
+        }
+    }
+
+    Box(modifier = modifier) {
+        OutlinedTextField(
+            value = formattedDisplayDate,
+            onValueChange = {},
+            readOnly = true,
+            enabled = true,
+            label = { Text(label) },
+            placeholder = { Text(stringResource(R.string.roast_date_placeholder)) },
+            trailingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = "Calendar",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth()
+        )
+        // Transparent overlay to open datepicker when clicking anywhere on the textfield
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(14.dp))
+                .clickable { showDatePicker = true }
+        )
+    }
+
+    if (showDatePicker) {
+        CoffeeDatePickerDialog(
+            initialDateString = value,
+            onDateSelected = { selectedDate -> onValueChange(selectedDate) },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+}
+
+
 

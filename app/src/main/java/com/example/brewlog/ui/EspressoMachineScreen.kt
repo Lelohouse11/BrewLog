@@ -2,6 +2,7 @@ package com.example.brewlog.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -101,29 +104,40 @@ fun EspressoMachineScreen(
                 .statusBarsPadding()
         ) {
         if (machine == null) {
-            // Empty State
-            CoffeeEmptyState(
-                title = stringResource(R.string.no_machine_title),
-                description = stringResource(R.string.no_machine_sub),
-                actionButton = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(
-                            onClick = { onNavigateToEdit() },
-                            shape = RoundedCornerShape(12.dp)
+            // Empty State Centered
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 60.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CoffeeEmptyState(
+                    title = stringResource(R.string.no_machine_title),
+                    description = stringResource(R.string.no_machine_sub),
+                    actionButton = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(stringResource(R.string.manual_setup))
-                        }
-                        Button(
-                            onClick = { showSetupDialog = true },
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.AutoAwesome, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.ai_setup))
+                            AiFeatureButton(
+                                onClick = { showSetupDialog = true },
+                                title = stringResource(R.string.ai_setup),
+                                subtitle = stringResource(R.string.ai_setup_subtitle),
+                                icon = Icons.Default.AutoAwesome
+                            )
+
+                            OutlinedButton(
+                                onClick = { onNavigateToEdit() },
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().height(48.dp)
+                            ) {
+                                Text(stringResource(R.string.manual_setup), fontWeight = FontWeight.Medium)
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         } else {
             // Machine Details
             Column(
@@ -356,7 +370,7 @@ fun EspressoMachineScreen(
                             OutlinedTextField(
                                 value = setupConsumption,
                                 onValueChange = { setupConsumption = it },
-                                label = { Text("Wöchentliche Tassen") },
+                                label = { Text(stringResource(R.string.weekly_consumption_cups)) },
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -366,14 +380,42 @@ fun EspressoMachineScreen(
                 },
                 confirmButton = {
                     if (!isScanning) {
-                        Button(
+                        Surface(
                             onClick = { geminiViewModel.fetchMachineInfo(setupBrand, setupModel) },
-                            shape = RoundedCornerShape(12.dp),
-                            enabled = setupBrand.isNotBlank() && setupModel.isNotBlank()
+                            enabled = setupBrand.isNotBlank() && setupModel.isNotBlank(),
+                            shape = RoundedCornerShape(14.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, if (setupBrand.isNotBlank() && setupModel.isNotBlank()) CremaAmber else MaterialTheme.colorScheme.outlineVariant)
                         ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.find_with_ai), fontWeight = FontWeight.Bold)
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        brush = if (setupBrand.isNotBlank() && setupModel.isNotBlank()) {
+                                            Brush.horizontalGradient(listOf(Color(0xFF8E44AD), Color(0xFFC88A58)))
+                                        } else {
+                                            SolidColor(MaterialTheme.colorScheme.surfaceVariant)
+                                        }
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = if (setupBrand.isNotBlank() && setupModel.isNotBlank()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.find_with_ai),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (setupBrand.isNotBlank() && setupModel.isNotBlank()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 },
@@ -442,7 +484,7 @@ fun MaintenanceProgressBar(
         remainingDays <= 0 -> Triple(
             errorColor,
             errorBg,
-            if (remainingDays < 0) stringResource(R.string.overdue_by_days, -remainingDays) else "Heute fällig"
+            if (remainingDays < 0) stringResource(R.string.overdue_by_days, -remainingDays) else stringResource(R.string.due_today)
         )
         rawProgress <= 0.3f -> Triple(
             warningColor,

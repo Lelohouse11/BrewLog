@@ -123,11 +123,11 @@ fun SettingsScreen(
                 }
 
                 item {
-                    SettingsSectionHeader("Barista Einstellungen")
+                    SettingsSectionHeader(stringResource(R.string.barista_settings))
                     Spacer(Modifier.height(8.dp))
                     CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
                         SettingsItem(
-                            title = "Gramm Schrittweite",
+                            title = stringResource(R.string.grams_step_size),
                             subtitle = "${String.format(Locale.ROOT, "%.1f", gramsStepSize)} g",
                             icon = Icons.Default.Scale,
                             onClick = { showGramsStepDialog.value = true }
@@ -136,7 +136,7 @@ fun SettingsScreen(
                         HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
                         SettingsItem(
-                            title = "Mahlgrad Schrittweite",
+                            title = stringResource(R.string.grind_step_size),
                             subtitle = String.format(Locale.ROOT, "%.1f", grindStepSize),
                             icon = Icons.Default.Tune,
                             onClick = { showGrindStepDialog.value = true }
@@ -145,12 +145,12 @@ fun SettingsScreen(
                 }
 
                 item {
-                    SettingsSectionHeader("Daten & Sicherung")
+                    SettingsSectionHeader(stringResource(R.string.data_backup))
                     Spacer(Modifier.height(8.dp))
                     CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
                         SettingsItem(
                             title = stringResource(R.string.import_json),
-                            subtitle = "Bohnen & Einstellungen aus Datei wiederherstellen",
+                            subtitle = stringResource(R.string.import_json_desc),
                             icon = Icons.Default.FileDownload,
                             onClick = {
                                 importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
@@ -161,7 +161,7 @@ fun SettingsScreen(
 
                         SettingsItem(
                             title = stringResource(R.string.export_json),
-                            subtitle = "Bohnen & Einstellungen als JSON exportieren",
+                            subtitle = stringResource(R.string.export_json_desc),
                             icon = Icons.Default.FileUpload,
                             onClick = {
                                 exportLauncher.launch("brew_settings.json")

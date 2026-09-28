@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 
-enum class SortOption { NAME, RATING }
+enum class SortOption { NAME, RATING, ROASTERY }
 
 data class FilterState(
     val ratingRange: ClosedFloatingPointRange<Float> = 1f..10f,
@@ -96,6 +96,7 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
             when (sort) {
                 SortOption.NAME -> a.coffeeName.compareTo(b.coffeeName, ignoreCase = true)
                 SortOption.RATING -> b.rating.compareTo(a.rating) // Descending
+                SortOption.ROASTERY -> a.roaster.compareTo(b.roaster, ignoreCase = true)
             }
         }
     }.stateIn(

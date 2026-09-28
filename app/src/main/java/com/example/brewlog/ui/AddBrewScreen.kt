@@ -3,6 +3,8 @@ package com.example.brewlog.ui
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +24,6 @@ import com.example.brewlog.R
 import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.components.*
 import com.example.brewlog.ui.theme.*
-import java.time.LocalDate
 
 val FLAVOR_TAG_OPTIONS = listOf(
     "Chocolate", "Nutty", "Fruity", "Floral", "Caramel",
@@ -85,6 +86,35 @@ fun AddBrewScreen(
 
     // Custom Notes
     var notes by remember { mutableStateOf(existingLog?.notes ?: "") }
+
+    // Population Effect when existingLog is loaded or updated
+    LaunchedEffect(existingLog) {
+        existingLog?.let { log ->
+            coffeeName = log.coffeeName
+            roaster = log.roaster
+            roastDate = log.roastDate
+            grindSize = log.grindSize.takeIf { it > 0 }?.toString() ?: ""
+            hasRoastLevel = log.roastLevel.isNotEmpty()
+            roastLevel = if (log.roastLevel.isNotEmpty()) log.roastLevel else "Medium"
+            hasRating = log.hasRating
+            rating = log.rating.toFloat()
+            hasBlendSettings = log.hasBlendSettings
+            arabicaPercent = log.arabicaPercentage
+            robustaPercent = log.robustaPercentage
+            excelsaPercent = log.excelsaPercentage
+            libericaPercent = log.libericaPercentage
+            singleGrams = log.singleGrams.toString()
+            doubleGrams = log.doubleGrams.toString()
+            hasSensoryProfile = log.hasSensoryProfile
+            sweetness = log.sweetness.toFloat()
+            acidity = log.acidity.toFloat()
+            body = log.body.toFloat()
+            bitterness = log.bitterness.toFloat()
+            hasFlavorTags = log.hasFlavorTags
+            selectedFlavorTags = log.flavorTags.toSet()
+            notes = log.notes
+        }
+    }
 
     // Observation of AI Scan Results
     val scanResult by geminiViewModel.scanResult.collectAsState()
@@ -241,22 +271,14 @@ fun AddBrewScreen(
             Spacer(Modifier.height(8.dp))
 
             // AI Scanner Section
-            OutlinedButton(
+            AiFeatureButton(
                 onClick = { cameraLauncher.launch(null) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                shape = RoundedCornerShape(14.dp),
-                enabled = !isScanning
-            ) {
-                if (isScanning) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.scanning_label))
-                } else {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null)
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.scan_label_ai), fontWeight = FontWeight.Bold)
-                }
-            }
+                title = stringResource(R.string.scan_label_ai),
+                subtitle = stringResource(R.string.scan_label_ai_subtitle),
+                icon = Icons.Default.CameraAlt,
+                isLoading = isScanning,
+                loadingText = stringResource(R.string.scanning_label)
+            )
 
             if (scanError != null) {
                 Text(text = scanError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
@@ -300,36 +322,23 @@ fun AddBrewScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = roastDate,
-                        onValueChange = { roastDate = it },
-                        label = { Text(stringResource(R.string.roast_date)) },
-                        placeholder = { Text(stringResource(R.string.roast_date_placeholder)) },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedButton(
-                        onClick = { roastDate = LocalDate.now().toString() },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.height(56.dp)
-                    ) {
-                        Icon(Icons.Default.Today, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.today), fontWeight = FontWeight.Bold)
-                    }
-                }
+                RoastDatePickerField(
+                    value = roastDate,
+                    onValueChange = { roastDate = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(Modifier.height(12.dp))
 
                 // Roast Level
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { hasRoastLevel = !hasRoastLevel }
+                    ) {
                         Checkbox(checked = hasRoastLevel, onCheckedChange = { hasRoastLevel = it })
                         Text(stringResource(R.string.add_roast_level), style = MaterialTheme.typography.bodyMedium)
                     }
@@ -351,7 +360,13 @@ fun AddBrewScreen(
 
                 // Blend Composition
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { hasBlendSettings = !hasBlendSettings }
+                    ) {
                         Checkbox(checked = hasBlendSettings, onCheckedChange = { hasBlendSettings = it })
                         Text(stringResource(R.string.blend_composition_pct), style = MaterialTheme.typography.bodyMedium)
                     }
@@ -465,7 +480,13 @@ fun AddBrewScreen(
 
                 // Rating
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { hasRating = !hasRating }
+                    ) {
                         Checkbox(checked = hasRating, onCheckedChange = { hasRating = it })
                         Text(stringResource(R.string.add_rating), style = MaterialTheme.typography.bodyMedium)
                     }
@@ -485,7 +506,13 @@ fun AddBrewScreen(
 
                 // Sensory Profile
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { hasSensoryProfile = !hasSensoryProfile }
+                    ) {
                         Checkbox(checked = hasSensoryProfile, onCheckedChange = { hasSensoryProfile = it })
                         Text(stringResource(R.string.add_sensory_profile), style = MaterialTheme.typography.bodyMedium)
                     }
@@ -503,7 +530,13 @@ fun AddBrewScreen(
 
                 // Flavor Tags
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { hasFlavorTags = !hasFlavorTags }
+                    ) {
                         Checkbox(checked = hasFlavorTags, onCheckedChange = { hasFlavorTags = it })
                         Text(stringResource(R.string.add_flavor_tags), style = MaterialTheme.typography.bodyMedium)
                     }
