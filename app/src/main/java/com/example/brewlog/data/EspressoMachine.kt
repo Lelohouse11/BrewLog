@@ -34,5 +34,10 @@ data class EspressoMachine(
     // Last Maintenance Dates (stored as Epoch Millis)
     val lastWaterFilterChange: Long? = null,
     val lastDescaling: Long? = null,
-    val lastBackflushing: Long? = null
+    val lastBackflushing: Long? = null,
+
+    // Custom Maintenance Guides / Instructions (optional)
+    val customWaterFilterGuide: String = "",
+    val customDescaleGuide: String = "",
+    val customBackflushGuide: String = ""
 )

@@ -12,7 +12,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
@@ -27,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
@@ -38,10 +41,10 @@ import com.example.brewlog.ui.theme.*
 @Composable
 fun EditMachineScreen(
     viewModel: BrewViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    geminiViewModel: GeminiViewModel = viewModel()
 ) {
     val machine by viewModel.espressoMachine.collectAsState()
-
     var brand by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
     var consumption by remember { mutableStateOf("") }
@@ -57,6 +60,27 @@ fun EditMachineScreen(
     var waterCycles by remember { mutableStateOf("") }
     var descaleCycles by remember { mutableStateOf("") }
     var backflushCycles by remember { mutableStateOf("") }
+
+    var waterGuide by remember { mutableStateOf("") }
+    var descaleGuide by remember { mutableStateOf("") }
+    var backflushGuide by remember { mutableStateOf("") }
+
+    val isGeneratingAi by geminiViewModel.isLoading.collectAsState()
+    val aiGeneratedGuide by geminiViewModel.generatedGuide.collectAsState()
+    var activeAiTaskTarget by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(aiGeneratedGuide) {
+        val guide = aiGeneratedGuide
+        if (!guide.isNullOrEmpty() && activeAiTaskTarget != null) {
+            when (activeAiTaskTarget) {
+                "water" -> waterGuide = guide
+                "descale" -> descaleGuide = guide
+                "backflush" -> backflushGuide = guide
+            }
+            activeAiTaskTarget = null
+            geminiViewModel.clearGeneratedGuide()
+        }
+    }
 
     val photoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -83,6 +107,10 @@ fun EditMachineScreen(
             waterCycles = it.waterFilterLimitCycles.toString()
             descaleCycles = it.descaleLimitCycles.toString()
             backflushCycles = it.backflushLimitCycles.toString()
+
+            waterGuide = it.customWaterFilterGuide
+            descaleGuide = it.customDescaleGuide
+            backflushGuide = it.customBackflushGuide
         }
     }
 
@@ -117,7 +145,10 @@ fun EditMachineScreen(
                         backflushIntervalDays = backflushDays.toIntOrNull() ?: 30,
                         waterFilterLimitCycles = waterCycles.toIntOrNull() ?: 0,
                         descaleLimitCycles = descaleCycles.toIntOrNull() ?: 0,
-                        backflushLimitCycles = backflushCycles.toIntOrNull() ?: 0
+                        backflushLimitCycles = backflushCycles.toIntOrNull() ?: 0,
+                        customWaterFilterGuide = waterGuide,
+                        customDescaleGuide = descaleGuide,
+                        customBackflushGuide = backflushGuide
                     )
                     viewModel.updateEspressoMachine(updated)
                     onNavigateBack()
@@ -304,6 +335,192 @@ fun EditMachineScreen(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+            }
+
+            // Custom Maintenance Guides (Optional)
+            CremaGlassCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.custom_guides_section), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                // Water Filter Guide
+                Text(
+                    stringResource(R.string.water_filter_guide_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = waterGuide,
+                    onValueChange = { waterGuide = it },
+                    placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            activeAiTaskTarget = "water"
+                            geminiViewModel.generateMaintenanceGuide(brand, model, "water")
+                        },
+                        enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        if (isGeneratingAi && activeAiTaskTarget == "water") {
+                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(4.dp))
+                        } else {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text(stringResource(R.string.ai_generate_short), style = MaterialTheme.typography.labelSmall)
+                    }
+
+                    OutlinedButton(
+                        onClick = { waterGuide = "" },
+                        enabled = waterGuide.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Descaling Guide
+                Text(
+                    stringResource(R.string.descale_guide_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = descaleGuide,
+                    onValueChange = { descaleGuide = it },
+                    placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            activeAiTaskTarget = "descale"
+                            geminiViewModel.generateMaintenanceGuide(brand, model, "descale")
+                        },
+                        enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        if (isGeneratingAi && activeAiTaskTarget == "descale") {
+                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(4.dp))
+                        } else {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text(stringResource(R.string.ai_generate_short), style = MaterialTheme.typography.labelSmall)
+                    }
+
+                    OutlinedButton(
+                        onClick = { descaleGuide = "" },
+                        enabled = descaleGuide.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Backflushing Guide
+                Text(
+                    stringResource(R.string.backflush_guide_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = backflushGuide,
+                    onValueChange = { backflushGuide = it },
+                    placeholder = { Text(stringResource(R.string.custom_guide_hint)) },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            activeAiTaskTarget = "backflush"
+                            geminiViewModel.generateMaintenanceGuide(brand, model, "backflush")
+                        },
+                        enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        if (isGeneratingAi && activeAiTaskTarget == "backflush") {
+                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(4.dp))
+                        } else {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text(stringResource(R.string.ai_generate_short), style = MaterialTheme.typography.labelSmall)
+                    }
+
+                    OutlinedButton(
+                        onClick = { backflushGuide = "" },
+                        enabled = backflushGuide.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelSmall)
+                    }
+                }
             }
 
             Spacer(Modifier.height(96.dp))

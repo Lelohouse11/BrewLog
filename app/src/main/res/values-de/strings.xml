@@ -240,6 +240,26 @@
     <string name="planned_roast">Röstung geplant</string>
     <string name="freshness_status">Frische-Fenster:</string>
 
+    <!-- Extended Maintenance Strings -->
+    <string name="last_done_date">Zuletzt erledigt: %s</string>
+    <string name="next_due_date">Nächstes Mal fällig: %s</string>
+    <string name="never_done">Noch nie</string>
+    <string name="guide_button">Anleitung</string>
+    <string name="instruction_title">Anleitung: %s</string>
+    <string name="generate_ai_guide">Mit KI generieren</string>
+    <string name="generating_guide">KI erstellt Pflegeanleitung für deine Maschine&#8230;</string>
+    <string name="save_guide">Anleitung speichern</string>
+    <string name="custom_guide_hint">Trage hier deine eigene Schritt-für-Schritt Anleitung oder Notizen ein (optional)&#8230;</string>
+    <string name="custom_guides_section">Eigene Pflegeanleitungen (Optional)</string>
+    <string name="water_filter_guide_label">Anleitung Wasserfilter-Wechsel</string>
+    <string name="descale_guide_label">Anleitung Entkalkung</string>
+    <string name="backflush_guide_label">Anleitung Rückspülen / Reinigung</string>
+    <string name="no_guide_available">Noch keine Anleitung gespeichert. Tippe auf "Mit KI generieren" oder schreibe eigene Notizen!</string>
+    <string name="close">Schließen</string>
+    <string name="edit_guide">Anleitung bearbeiten</string>
+    <string name="ai_generate_short">Mit KI erstellen</string>
+    <string name="clear_guide">Anleitung löschen</string>
+
     <!-- Diagnoses -->
     <string name="diag_balanced">Ausgewogene Extraktion</string>
     <string name="diag_balanced_desc">Die Extraktion ist optimal eingestellt. Perfekte Balance!</string>

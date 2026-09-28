@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.util.Locale
 
 class GeminiViewModel : ViewModel() {
 
@@ -104,9 +105,59 @@ class GeminiViewModel : ViewModel() {
         }
     }
 
+    private val _generatedGuide = MutableStateFlow<String?>(null)
+    val generatedGuide = _generatedGuide.asStateFlow()
+
     fun clearResult() {
         _scanResult.value = null
         _machineScanResult.value = null
+        _generatedGuide.value = null
+    }
+
+    fun clearGeneratedGuide() {
+        _generatedGuide.value = null
+    }
+
+    fun generateMaintenanceGuide(brand: String, model: String, taskType: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _generatedGuide.value = null
+
+            try {
+                val language = Locale.getDefault().language
+                val langInstruction = if (language == "de") {
+                    "Antworte vollständig auf Deutsch."
+                } else {
+                    "Respond entirely in English."
+                }
+
+                val prompt = """
+                    You are a professional espresso machine maintenance technician.
+                    Provide a detailed, clear, step-by-step maintenance guide for a home barista for the following:
+                    Espresso Machine Brand: $brand
+                    Espresso Machine Model: $model
+                    Maintenance Task: $taskType (Water Filter / Descaling / Group Backflushing)
+
+                    Structure & Formatting Rules:
+                    - Divide the process into 6 to 10 small, clear, numbered steps (1., 2., 3., etc.).
+                    - Keep each step short (1-2 sentences max) so it is easy to follow while performing the task.
+                    - Tailor the steps specifically to this machine's architecture (e.g. thermoblock vs dual boiler vs E61 vs solenoid valve).
+                    
+                    $langInstruction
+                    Do NOT include markdown headers (like # or ##) or unnecessary intro fluff. Start directly with Step 1.
+                """.trimIndent()
+
+                val inputContent = content { text(prompt) }
+                val response = generativeModel.generateContent(inputContent)
+                val text = response.text?.trim() ?: throw Exception("Empty response")
+                _generatedGuide.value = text
+            } catch (e: Exception) {
+                _errorMessage.value = "Error generating guide: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun fetchMachineInfo(brand: String, model: String) {

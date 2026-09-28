@@ -240,6 +240,26 @@
     <string name="planned_roast">Planned Roast</string>
     <string name="freshness_status">Freshness Window:</string>
 
+    <!-- Extended Maintenance Strings -->
+    <string name="last_done_date">Last done: %s</string>
+    <string name="next_due_date">Next due: %s</string>
+    <string name="never_done">Never</string>
+    <string name="guide_button">Instructions</string>
+    <string name="instruction_title">Instructions: %s</string>
+    <string name="generate_ai_guide">Generate with AI</string>
+    <string name="generating_guide">AI is writing instructions for your machine&#8230;</string>
+    <string name="save_guide">Save Instructions</string>
+    <string name="custom_guide_hint">Enter your custom step-by-step instructions or notes here (optional)&#8230;</string>
+    <string name="custom_guides_section">Custom Maintenance Instructions (Optional)</string>
+    <string name="water_filter_guide_label">Water Filter Instructions</string>
+    <string name="descale_guide_label">Descaling Instructions</string>
+    <string name="backflush_guide_label">Backflushing Instructions</string>
+    <string name="no_guide_available">No instructions saved yet. Tap "Generate with AI" or write your own notes below!</string>
+    <string name="close">Close</string>
+    <string name="edit_guide">Edit Instructions</string>
+    <string name="ai_generate_short">Generate via AI</string>
+    <string name="clear_guide">Clear Instructions</string>
+
     <!-- Diagnoses -->
     <string name="diag_balanced">Balanced Extraction</string>
     <string name="diag_balanced_desc">Extraction parameters are dialed in. Perfect balance achieved!</string>
