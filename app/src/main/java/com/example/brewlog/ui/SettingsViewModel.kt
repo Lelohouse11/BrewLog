@@ -36,6 +36,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = 0.5f
         )
 
+    val geminiApiKey: StateFlow<String> = repository.geminiApiKey
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
+
+    val aiEnabled: StateFlow<Boolean> = repository.aiEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    val isApiKeyConfigured: StateFlow<Boolean> = repository.isApiKeyConfigured
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(mode)
@@ -51,6 +72,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setGrindStepSize(stepSize: Float) {
         viewModelScope.launch {
             repository.setGrindStepSize(stepSize)
+        }
+    }
+
+    fun setGeminiApiKey(apiKey: String) {
+        viewModelScope.launch {
+            repository.setGeminiApiKey(apiKey)
+        }
+    }
+
+    fun setAiEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setAiEnabled(enabled)
         }
     }
 

@@ -54,6 +54,21 @@
     <string name="import_json_desc">Kaffeebohnen &amp; Protokolle aus Datei wiederherstellen</string>
     <string name="export_json_desc">Kaffeebohnen &amp; Protokolle als JSON exportieren</string>
 
+    <!-- AI Settings -->
+    <string name="ai_settings_header">KI &amp; Gemini-Konfiguration</string>
+    <string name="ai_enabled_title">KI-Funktionen anzeigen</string>
+    <string name="ai_enabled_desc">Zeigt KI-Buttons für Labelscans, Spezifikationen und Anleitungen in der App an</string>
+    <string name="gemini_api_key_title">Gemini API-Schlüssel</string>
+    <string name="custom_api_key_active">Eigener API-Key konfiguriert</string>
+    <string name="default_api_key_active">Standard API-Key aktiv</string>
+    <string name="no_api_key_configured">Kein API-Key hinterlegt</string>
+    <string name="configure_gemini_api_key">Gemini API-Key einrichten</string>
+    <string name="api_key_dialog_desc">Gib deinen Google AI Studio API-Key ein, um KI-Labelanalysen und Anleitungen zu nutzen. Leer lassen für Standard-Key.</string>
+    <string name="get_free_api_key">Kostenlosen Key holen (Google AI Studio)</string>
+    <string name="setup_ai_title">KI-Funktion einrichten</string>
+    <string name="setup_ai_message">Um KI-Etikettenscans und Anleitungen zu nutzen, richtest du am besten in den Einstellungen deinen kostenlosen Gemini API-Key ein.</string>
+    <string name="open_settings">Zu den Einstellungen</string>
+
     <!-- Main Brew List -->
     <string name="no_brews_found">Noch keine Kaffeebohnen hinzugefügt.</string>
     <string name="add_first_brew">Tippe auf +, um deine erste Kaffeebohne hinzuzufügen!</string>

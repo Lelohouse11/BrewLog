@@ -295,9 +295,8 @@ fun BaristaMetricBadge(
 @Composable
 fun FloatingGlassNavigationBar(
     currentDestination: String?,
-    onNavigate: (String) -> Unit,
-    onNavigateToSettings: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigate: (String) -> Unit
 ) {
     val isDark = isAppInDarkTheme()
     val navBg = if (isDark) Color(0xF218120F) else Color(0xF8F0EAE0)
@@ -351,7 +350,7 @@ fun FloatingGlassNavigationBar(
                 )
                 NavGlassItem(
                     selected = currentDestination == "settings",
-                    onClick = onNavigateToSettings,
+                    onClick = { onNavigate("settings") },
                     icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings), modifier = Modifier.size(20.dp)) },
                     label = "Optionen"
                 )

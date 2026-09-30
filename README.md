@@ -112,10 +112,12 @@ BrewLog is built with first-class accessibility support to ensure an inclusive e
 3. Tap the file to install (allow "Install from unknown sources" if prompted).
 
 ### AI Setup (Optional)
-To enable the **AI Coffee Label Scanner**:
-1. Obtain an API Key from **[Google AI Studio](https://aistudio.google.com/)**.
-2. Open `app/src/main/java/com/example/brewlog/ui/GeminiViewModel.kt`.
-3. Set your key in `apiKey`.
+To enable the **AI Coffee Label Scanner**, **AI Machine Spec Search**, and **AI Step-by-Step Maintenance Guides**:
+1. Obtain a free API Key from **[Google AI Studio](https://aistudio.google.com/)**.
+2. Open the **BrewLog App** and navigate to **Settings (Einstellungen)**.
+3. Under **"KI & Gemini-Konfiguration"**, tap **"Gemini API-Schlüssel"** and paste your key.
+4. You can toggle **"KI-Funktionen anzeigen"** on or off at any time in Settings.
+5. *(Optional for Developers)*: You can also set `GEMINI_API_KEY=your_key` in `local.properties` at the project root directory so that debug builds automatically include a default key.
 
 ### Building from Source
 Run the included build script to compile a fresh APK:

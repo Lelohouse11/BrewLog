@@ -53,17 +53,22 @@ private data class GuideTaskInfo(
 fun EspressoMachineScreen(
     viewModel: BrewViewModel,
     onNavigateToEdit: () -> Unit,
-    geminiViewModel: GeminiViewModel = viewModel()
+    onNavigateToSettings: () -> Unit = {},
+    geminiViewModel: GeminiViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel()
 ) {
     val machine by viewModel.espressoMachine.collectAsState()
     val scanResult by geminiViewModel.machineScanResult.collectAsState()
     val isScanning by geminiViewModel.isLoading.collectAsState()
     val scanError by geminiViewModel.errorMessage.collectAsState()
+    val aiEnabled by settingsViewModel.aiEnabled.collectAsState()
+    val isApiKeyConfigured by settingsViewModel.isApiKeyConfigured.collectAsState()
 
     var showSetupDialog by remember { mutableStateOf(false) }
     var showQuickEditDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var activeGuideTask by remember { mutableStateOf<GuideTaskInfo?>(null) }
+    var showAiSetupDialog by remember { mutableStateOf(false) }
     
     // Setup form state
     var setupBrand by remember { mutableStateOf("") }
@@ -135,12 +140,20 @@ fun EspressoMachineScreen(
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                AiFeatureButton(
-                                    onClick = { showSetupDialog = true },
-                                    title = stringResource(R.string.ai_setup),
-                                    subtitle = stringResource(R.string.ai_setup_subtitle),
-                                    icon = Icons.Default.AutoAwesome
-                                )
+                                if (aiEnabled) {
+                                    AiFeatureButton(
+                                        onClick = {
+                                            if (isApiKeyConfigured) {
+                                                showSetupDialog = true
+                                            } else {
+                                                showAiSetupDialog = true
+                                            }
+                                        },
+                                        title = stringResource(R.string.ai_setup),
+                                        subtitle = stringResource(R.string.ai_setup_subtitle),
+                                        icon = Icons.Default.AutoAwesome
+                                    )
+                                }
 
                                 OutlinedButton(
                                     onClick = { onNavigateToEdit() },
@@ -423,7 +436,13 @@ fun EspressoMachineScreen(
                     confirmButton = {
                         if (!isScanning) {
                             AiGradientButton(
-                                onClick = { geminiViewModel.fetchMachineInfo(setupBrand, setupModel) },
+                                onClick = {
+                                    if (isApiKeyConfigured) {
+                                        geminiViewModel.fetchMachineInfo(setupBrand, setupModel)
+                                    } else {
+                                        showAiSetupDialog = true
+                                    }
+                                },
                                 text = stringResource(R.string.find_with_ai),
                                 enabled = setupBrand.isNotBlank() && setupModel.isNotBlank(),
                                 cornerRadius = 14.dp,
@@ -455,6 +474,9 @@ fun EspressoMachineScreen(
                     guideInfo = activeGuideTask!!,
                     machine = machine!!,
                     geminiViewModel = geminiViewModel,
+                    aiEnabled = aiEnabled,
+                    isApiKeyConfigured = isApiKeyConfigured,
+                    onShowAiSetupDialog = { showAiSetupDialog = true },
                     onNavigateBack = {
                         geminiViewModel.clearGeneratedGuide()
                         activeGuideTask = null
@@ -470,6 +492,13 @@ fun EspressoMachineScreen(
                     }
                 )
             }
+        }
+
+        if (showAiSetupDialog) {
+            AiSetupPromptDialog(
+                onDismiss = { showAiSetupDialog = false },
+                onGoToSettings = onNavigateToSettings
+            )
         }
     }
 }
@@ -680,6 +709,9 @@ private fun MaintenanceGuideScreen(
     guideInfo: GuideTaskInfo,
     machine: EspressoMachine,
     geminiViewModel: GeminiViewModel,
+    aiEnabled: Boolean,
+    isApiKeyConfigured: Boolean,
+    onShowAiSetupDialog: () -> Unit,
     onNavigateBack: () -> Unit,
     onSaveGuide: (String) -> Unit
 ) {
@@ -793,19 +825,25 @@ private fun MaintenanceGuideScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AiGradientButton(
-                        onClick = {
-                            geminiViewModel.generateMaintenanceGuide(
-                                brand = machine.brand,
-                                model = machine.model,
-                                taskType = guideInfo.taskType
-                            )
-                        },
-                        text = stringResource(R.string.generate_ai_guide),
-                        isLoading = isGenerating,
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    if (aiEnabled) {
+                        AiGradientButton(
+                            onClick = {
+                                if (isApiKeyConfigured) {
+                                    geminiViewModel.generateMaintenanceGuide(
+                                        brand = machine.brand,
+                                        model = machine.model,
+                                        taskType = guideInfo.taskType
+                                    )
+                                } else {
+                                    onShowAiSetupDialog()
+                                }
+                            },
+                            text = stringResource(R.string.generate_ai_guide),
+                            isLoading = isGenerating,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
 
                     Button(
                         onClick = {

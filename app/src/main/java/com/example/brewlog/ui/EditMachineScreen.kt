@@ -44,8 +44,13 @@ import com.example.brewlog.ui.theme.*
 fun EditMachineScreen(
     viewModel: BrewViewModel,
     onNavigateBack: () -> Unit,
-    geminiViewModel: GeminiViewModel = viewModel()
+    onNavigateToSettings: () -> Unit = {},
+    geminiViewModel: GeminiViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel()
 ) {
+    val aiEnabled by settingsViewModel.aiEnabled.collectAsState()
+    val isApiKeyConfigured by settingsViewModel.isApiKeyConfigured.collectAsState()
+    var showAiSetupDialog by remember { mutableStateOf(false) }
     val machine by viewModel.espressoMachine.collectAsState()
     var brand by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
@@ -371,20 +376,26 @@ fun EditMachineScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AiGradientButton(
-                        onClick = {
-                            activeAiTaskTarget = "water"
-                            geminiViewModel.generateMaintenanceGuide(brand, model, "water")
-                        },
-                        text = stringResource(R.string.ai_generate_short),
-                        isLoading = isGeneratingAi && activeAiTaskTarget == "water",
-                        enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
-                        modifier = Modifier.weight(1f).height(42.dp),
-                        cornerRadius = 12.dp,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                        iconSize = 16.dp,
-                        textStyle = MaterialTheme.typography.labelMedium
-                    )
+                    if (aiEnabled) {
+                        AiGradientButton(
+                            onClick = {
+                                if (isApiKeyConfigured) {
+                                    activeAiTaskTarget = "water"
+                                    geminiViewModel.generateMaintenanceGuide(brand, model, "water")
+                                } else {
+                                    showAiSetupDialog = true
+                                }
+                            },
+                            text = stringResource(R.string.ai_generate_short),
+                            isLoading = isGeneratingAi && activeAiTaskTarget == "water",
+                            enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
+                            modifier = Modifier.weight(1f).height(42.dp),
+                            cornerRadius = 12.dp,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                            iconSize = 16.dp,
+                            textStyle = MaterialTheme.typography.labelMedium
+                        )
+                    }
 
                     OutlinedButton(
                         onClick = { waterGuide = "" },
@@ -424,20 +435,26 @@ fun EditMachineScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AiGradientButton(
-                        onClick = {
-                            activeAiTaskTarget = "descale"
-                            geminiViewModel.generateMaintenanceGuide(brand, model, "descale")
-                        },
-                        text = stringResource(R.string.ai_generate_short),
-                        isLoading = isGeneratingAi && activeAiTaskTarget == "descale",
-                        enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
-                        modifier = Modifier.weight(1f).height(42.dp),
-                        cornerRadius = 12.dp,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                        iconSize = 16.dp,
-                        textStyle = MaterialTheme.typography.labelMedium
-                    )
+                    if (aiEnabled) {
+                        AiGradientButton(
+                            onClick = {
+                                if (isApiKeyConfigured) {
+                                    activeAiTaskTarget = "descale"
+                                    geminiViewModel.generateMaintenanceGuide(brand, model, "descale")
+                                } else {
+                                    showAiSetupDialog = true
+                                }
+                            },
+                            text = stringResource(R.string.ai_generate_short),
+                            isLoading = isGeneratingAi && activeAiTaskTarget == "descale",
+                            enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
+                            modifier = Modifier.weight(1f).height(42.dp),
+                            cornerRadius = 12.dp,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                            iconSize = 16.dp,
+                            textStyle = MaterialTheme.typography.labelMedium
+                        )
+                    }
 
                     OutlinedButton(
                         onClick = { descaleGuide = "" },
@@ -477,20 +494,26 @@ fun EditMachineScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AiGradientButton(
-                        onClick = {
-                            activeAiTaskTarget = "backflush"
-                            geminiViewModel.generateMaintenanceGuide(brand, model, "backflush")
-                        },
-                        text = stringResource(R.string.ai_generate_short),
-                        isLoading = isGeneratingAi && activeAiTaskTarget == "backflush",
-                        enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
-                        modifier = Modifier.weight(1f).height(42.dp),
-                        cornerRadius = 12.dp,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                        iconSize = 16.dp,
-                        textStyle = MaterialTheme.typography.labelMedium
-                    )
+                    if (aiEnabled) {
+                        AiGradientButton(
+                            onClick = {
+                                if (isApiKeyConfigured) {
+                                    activeAiTaskTarget = "backflush"
+                                    geminiViewModel.generateMaintenanceGuide(brand, model, "backflush")
+                                } else {
+                                    showAiSetupDialog = true
+                                }
+                            },
+                            text = stringResource(R.string.ai_generate_short),
+                            isLoading = isGeneratingAi && activeAiTaskTarget == "backflush",
+                            enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
+                            modifier = Modifier.weight(1f).height(42.dp),
+                            cornerRadius = 12.dp,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                            iconSize = 16.dp,
+                            textStyle = MaterialTheme.typography.labelMedium
+                        )
+                    }
 
                     OutlinedButton(
                         onClick = { backflushGuide = "" },
@@ -508,6 +531,13 @@ fun EditMachineScreen(
             }
 
             Spacer(Modifier.height(96.dp))
+        }
+
+        if (showAiSetupDialog) {
+            AiSetupPromptDialog(
+                onDismiss = { showAiSetupDialog = false },
+                onGoToSettings = onNavigateToSettings
+            )
         }
     }
 }

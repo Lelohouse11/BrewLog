@@ -11,9 +11,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Scale
@@ -34,6 +36,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.brewlog.BuildConfig
 import com.example.brewlog.R
+import com.example.brewlog.data.SettingsRepository
 import com.example.brewlog.data.ThemeMode
 import com.example.brewlog.ui.components.CremaGlassCard
 import com.example.brewlog.ui.theme.*
@@ -51,6 +54,8 @@ fun SettingsScreen(
     val themeMode by viewModel.themeMode.collectAsState()
     val gramsStepSize by viewModel.gramsStepSize.collectAsState()
     val grindStepSize by viewModel.grindStepSize.collectAsState()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val aiEnabled by viewModel.aiEnabled.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
@@ -58,6 +63,7 @@ fun SettingsScreen(
     val showLanguageDialog = remember { mutableStateOf(false) }
     val showGramsStepDialog = remember { mutableStateOf(false) }
     val showGrindStepDialog = remember { mutableStateOf(false) }
+    val showApiKeyDialog = remember { mutableStateOf(false) }
 
     val importSuccessMsg = stringResource(R.string.import_success)
     val importErrorMsg = stringResource(R.string.import_error)
@@ -157,6 +163,40 @@ fun SettingsScreen(
                             icon = Icons.Default.Tune,
                             onClick = { showGrindStepDialog.value = true }
                         )
+                    }
+                }
+
+                item {
+                    SettingsSectionHeader(stringResource(R.string.ai_settings_header))
+                    Spacer(Modifier.height(8.dp))
+                    CremaGlassCard(contentPadding = PaddingValues(0.dp)) {
+                        SettingsSwitchItem(
+                            title = stringResource(R.string.ai_enabled_title),
+                            subtitle = stringResource(R.string.ai_enabled_desc),
+                            icon = Icons.Default.AutoAwesome,
+                            checked = aiEnabled,
+                            onCheckedChange = { viewModel.setAiEnabled(it) }
+                        )
+
+                        if (aiEnabled) {
+                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                            val buildKey = BuildConfig.GEMINI_API_KEY
+                            val keyStatus = if (SettingsRepository.isRealApiKey(geminiApiKey)) {
+                                stringResource(R.string.custom_api_key_active)
+                            } else if (SettingsRepository.isRealApiKey(buildKey)) {
+                                stringResource(R.string.default_api_key_active)
+                            } else {
+                                stringResource(R.string.no_api_key_configured)
+                            }
+
+                            SettingsItem(
+                                title = stringResource(R.string.gemini_api_key_title),
+                                subtitle = keyStatus,
+                                icon = Icons.Default.Key,
+                                onClick = { showApiKeyDialog.value = true }
+                            )
+                        }
                     }
                 }
 
@@ -262,8 +302,186 @@ fun SettingsScreen(
                     }
                 )
             }
+
+            if (showApiKeyDialog.value) {
+                ApiKeyDialog(
+                    currentKey = geminiApiKey,
+                    onDismiss = { showApiKeyDialog.value = false },
+                    onSave = {
+                        viewModel.setGeminiApiKey(it)
+                        showApiKeyDialog.value = false
+                    }
+                )
+            }
         }
     }
+}
+
+@Composable
+fun SettingsSwitchItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) },
+        color = Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
+        }
+    }
+}
+
+@Composable
+fun ApiKeyDialog(
+    currentKey: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(currentKey) }
+    val context = LocalContext.current
+    val isDark = isAppInDarkTheme()
+    val dialogBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = dialogBg,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                stringResource(R.string.configure_gemini_api_key),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(R.string.api_key_dialog_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("API Key") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, "https://aistudio.google.com/app/apikey".toUri())
+                        try {
+                            context.startActivity(intent)
+                        } catch (_: ActivityNotFoundException) {}
+                    },
+                    modifier = Modifier.align(Alignment.Start)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.get_free_api_key),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(text) },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+fun AiSetupPromptDialog(
+    onDismiss: () -> Unit,
+    onGoToSettings: () -> Unit
+) {
+    val isDark = isAppInDarkTheme()
+    val dialogBg = if (isDark) EspressoGlassBg else VellumGlassBg
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = dialogBg,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                stringResource(R.string.setup_ai_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(
+                stringResource(R.string.setup_ai_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onDismiss()
+                    onGoToSettings()
+                },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(R.string.open_settings))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }
 
 @Composable

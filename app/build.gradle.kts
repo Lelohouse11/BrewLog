@@ -6,6 +6,10 @@ plugins {
     alias(libs.plugins.secrets)
 }
 
+secrets {
+    defaultPropertiesFileName = "secrets.defaults.properties"
+}
+
 android {
     namespace = "com.example.brewlog"
     compileSdk = 37
@@ -13,11 +17,16 @@ android {
     defaultConfig {
         applicationId = "com.example.brewlog"
         minSdk = 29
+        //noinspection ExpiredTargetSdkVersion,TargetSdkVersion
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    lint {
+        disable += listOf("ExpiredTargetSdkVersion", "TargetSdkVersion")
     }
 
     buildTypes {

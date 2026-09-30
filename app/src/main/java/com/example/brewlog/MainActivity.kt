@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -129,7 +130,8 @@ class MainActivity : AppCompatActivity() {
                             composable("espresso_machine") {
                                 EspressoMachineScreen(
                                     viewModel = viewModel,
-                                    onNavigateToEdit = { navController.navigate("edit_machine") }
+                                    onNavigateToEdit = { navController.navigate("edit_machine") },
+                                    onNavigateToSettings = { navController.navigate("settings") }
                                 )
                             }
                             composable(
@@ -145,7 +147,8 @@ class MainActivity : AppCompatActivity() {
                             ) {
                                 EditMachineScreen(
                                     viewModel = viewModel,
-                                    onNavigateBack = { navController.popBackStack() }
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToSettings = { navController.navigate("settings") }
                                 )
                             }
                             composable("settings") {
@@ -215,7 +218,8 @@ class MainActivity : AppCompatActivity() {
                                         viewModel.addLog(it)
                                         navController.popBackStack()
                                     },
-                                    onNavigateBack = { navController.popBackStack() }
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToSettings = { navController.navigate("settings") }
                                 )
                             }
                             composable(
@@ -240,7 +244,8 @@ class MainActivity : AppCompatActivity() {
                                         navController.popBackStack()
                                     },
                                     onNavigateBack = { navController.popBackStack() },
-                                    existingLog = logToEdit
+                                    existingLog = logToEdit,
+                                    onNavigateToSettings = { navController.navigate("settings") }
                                 )
                             }
                         }
@@ -251,16 +256,9 @@ class MainActivity : AppCompatActivity() {
                                 onNavigate = { destination ->
                                     if (currentDestination != destination) {
                                         navController.navigate(destination) {
-                                            popUpTo("home") { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                },
-                                onNavigateToSettings = {
-                                    if (currentDestination != "settings") {
-                                        navController.navigate("settings") {
-                                            popUpTo("home") { saveState = true }
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
                                             launchSingleTop = true
                                             restoreState = true
                                         }

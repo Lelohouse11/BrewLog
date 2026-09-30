@@ -40,11 +40,15 @@ fun AddBrewScreen(
     onSave: (BrewLog) -> Unit,
     onNavigateBack: () -> Unit,
     existingLog: BrewLog? = null,
+    onNavigateToSettings: () -> Unit = {},
     geminiViewModel: GeminiViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel()
 ) {
     val gramsStepSize by settingsViewModel.gramsStepSize.collectAsState()
     val grindStepSize by settingsViewModel.grindStepSize.collectAsState()
+    val aiEnabled by settingsViewModel.aiEnabled.collectAsState()
+    val isApiKeyConfigured by settingsViewModel.isApiKeyConfigured.collectAsState()
+    var showAiSetupDialog by remember { mutableStateOf(false) }
 
     // Basic Info
     var coffeeName by remember { mutableStateOf(existingLog?.coffeeName ?: "") }
@@ -274,18 +278,33 @@ fun AddBrewScreen(
         ) {
             Spacer(Modifier.height(8.dp))
 
-            // AI Scanner Section
-            AiFeatureButton(
-                onClick = { cameraLauncher.launch(null) },
-                title = stringResource(R.string.scan_label_ai),
-                subtitle = stringResource(R.string.scan_label_ai_subtitle),
-                icon = Icons.Default.CameraAlt,
-                isLoading = isScanning,
-                loadingText = stringResource(R.string.scanning_label)
-            )
+            if (aiEnabled) {
+                // AI Scanner Section
+                AiFeatureButton(
+                    onClick = {
+                        if (isApiKeyConfigured) {
+                            cameraLauncher.launch(null)
+                        } else {
+                            showAiSetupDialog = true
+                        }
+                    },
+                    title = stringResource(R.string.scan_label_ai),
+                    subtitle = stringResource(R.string.scan_label_ai_subtitle),
+                    icon = Icons.Default.CameraAlt,
+                    isLoading = isScanning,
+                    loadingText = stringResource(R.string.scanning_label)
+                )
 
-            if (scanError != null) {
-                Text(text = scanError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                if (scanError != null) {
+                    Text(text = scanError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
+            if (showAiSetupDialog) {
+                AiSetupPromptDialog(
+                    onDismiss = { showAiSetupDialog = false },
+                    onGoToSettings = onNavigateToSettings
+                )
             }
 
             // --- SECTION 1: COFFEE IDENTITY ---

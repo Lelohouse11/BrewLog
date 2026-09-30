@@ -54,6 +54,21 @@
     <string name="import_json_desc">Restore coffee beans and logs from JSON file</string>
     <string name="export_json_desc">Export coffee beans and logs as JSON file</string>
 
+    <!-- AI Settings -->
+    <string name="ai_settings_header">AI &amp; Gemini Configuration</string>
+    <string name="ai_enabled_title">Enable AI Features</string>
+    <string name="ai_enabled_desc">Show AI scanning, machine specs, and maintenance guide buttons in app</string>
+    <string name="gemini_api_key_title">Gemini API Key</string>
+    <string name="custom_api_key_active">Custom API Key configured</string>
+    <string name="default_api_key_active">Default system API Key active</string>
+    <string name="no_api_key_configured">No API Key configured</string>
+    <string name="configure_gemini_api_key">Configure Gemini API Key</string>
+    <string name="api_key_dialog_desc">Enter your Google AI Studio API key to enable AI label scanning and maintenance guides. Leave blank to use system default.</string>
+    <string name="get_free_api_key">Get free API Key (Google AI Studio)</string>
+    <string name="setup_ai_title">Set Up AI Features</string>
+    <string name="setup_ai_message">To use AI label scanning and maintenance guides, configure your free Gemini API key in Settings.</string>
+    <string name="open_settings">Go to Settings</string>
+
     <!-- Main Brew List -->
     <string name="no_brews_found">No coffee beans added yet.</string>
     <string name="add_first_brew">Tap + to add your first coffee bean!</string>

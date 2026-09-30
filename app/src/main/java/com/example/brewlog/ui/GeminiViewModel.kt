@@ -1,29 +1,40 @@
 package com.example.brewlog.ui
 
-import com.example.brewlog.BuildConfig
+import android.app.Application
 import android.graphics.Bitmap
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.brewlog.BuildConfig
 import com.example.brewlog.data.MachineScanResult
 import com.example.brewlog.data.ScanResult
+import com.example.brewlog.data.SettingsRepository
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.Locale
 
-class GeminiViewModel : ViewModel() {
+class GeminiViewModel(application: Application) : AndroidViewModel(application) {
 
-    // The API Key is now retrieved from local.properties via secrets-gradle-plugin
-    private val apiKey = BuildConfig.GEMINI_API_KEY
+    private val repository = SettingsRepository(application)
 
-    private val generativeModel = GenerativeModel(
-        modelName = "gemini-3.1-flash-lite",
-        apiKey = apiKey,
-    )
+    private suspend fun getGenerativeModel(): GenerativeModel {
+        val userKey = repository.geminiApiKey.first().trim()
+        val buildKey = BuildConfig.GEMINI_API_KEY
+        val apiKey = when {
+            SettingsRepository.isRealApiKey(userKey) -> userKey
+            SettingsRepository.isRealApiKey(buildKey) -> buildKey
+            else -> ""
+        }
+        return GenerativeModel(
+            modelName = "gemini-flash-latest",
+            apiKey = apiKey,
+        )
+    }
 
     private val json = Json { 
         ignoreUnknownKeys = true 
@@ -80,6 +91,7 @@ class GeminiViewModel : ViewModel() {
                     text(prompt)
                 }
 
+                val generativeModel = getGenerativeModel()
                 val response = generativeModel.generateContent(inputContent)
                 val responseText = response.text?.trim() ?: throw Exception("Empty response from AI")
                 
@@ -89,11 +101,7 @@ class GeminiViewModel : ViewModel() {
                 _scanResult.value = result
             } catch (e: Exception) {
                 e.printStackTrace()
-                if (e.message?.contains("404") == true) {
-                    _errorMessage.value = "AI Error (404): Model not found. Please check your API Key and billing status in AI Studio."
-                } else {
-                    _errorMessage.value = "Failed to scan label: ${e.message}"
-                }
+                _errorMessage.value = parseUserFriendlyErrorMessage(e.message)
             } finally {
                 _isLoading.value = false
             }
@@ -112,6 +120,61 @@ class GeminiViewModel : ViewModel() {
             text = text.substring(firstBrace, lastBrace + 1)
         }
         return text
+    }
+
+    private fun parseUserFriendlyErrorMessage(rawMessage: String?): String {
+        if (rawMessage.isNullOrBlank()) {
+            return if (Locale.getDefault().language == "de") "Unbekannter KI-Fehler." else "Unknown AI error."
+        }
+
+        val isDe = Locale.getDefault().language == "de"
+
+        if (rawMessage.contains("429") || rawMessage.contains("RESOURCE_EXHAUSTED", ignoreCase = true) || rawMessage.contains("quota", ignoreCase = true)) {
+            return if (isDe) {
+                "Die KI ist aktuell sehr stark ausgelastet (Limit erreicht). Bitte versuche es in wenigen Minuten erneut."
+            } else {
+                "The AI service is currently at capacity (quota limit reached). Please try again in a few minutes."
+            }
+        }
+
+        if (rawMessage.contains("404") || rawMessage.contains("NOT_FOUND", ignoreCase = true)) {
+            return if (isDe) {
+                "KI-Modell nicht gefunden (404). Bitte überprüfe deinen Gemini API-Key in den Einstellungen."
+            } else {
+                "AI model not found (404). Please check your Gemini API key in Settings."
+            }
+        }
+
+        if (rawMessage.contains("API_KEY_INVALID", ignoreCase = true) ||
+            rawMessage.contains("API key not valid", ignoreCase = true) ||
+            rawMessage.contains("Invalid authentication credentials", ignoreCase = true) ||
+            rawMessage.contains("OAuth 2", ignoreCase = true) ||
+            rawMessage.contains("authentication credential", ignoreCase = true) ||
+            rawMessage.contains("UNAUTHENTICATED", ignoreCase = true) ||
+            rawMessage.contains("PERMISSION_DENIED", ignoreCase = true)
+        ) {
+            return if (isDe) {
+                "Ungültiger API-Key. Bitte überprüfe deinen Gemini Key in den Einstellungen."
+            } else {
+                "Invalid API key. Please check your Gemini Key in Settings."
+            }
+        }
+
+        // Try extracting the "message" field if JSON is present
+        try {
+            if (rawMessage.contains("\"message\"")) {
+                val extractedMessage = rawMessage
+                    .substringAfter("\"message\":")
+                    .substringAfter("\"")
+                    .substringBefore("\"")
+                    .trim()
+                if (extractedMessage.isNotBlank()) {
+                    return extractedMessage
+                }
+            }
+        } catch (_: Exception) {}
+
+        return rawMessage.take(150)
     }
 
     private val _generatedGuide = MutableStateFlow<String?>(null)
@@ -158,11 +221,12 @@ class GeminiViewModel : ViewModel() {
                 """.trimIndent()
 
                 val inputContent = content { text(prompt) }
+                val generativeModel = getGenerativeModel()
                 val response = generativeModel.generateContent(inputContent)
                 val text = response.text?.trim() ?: throw Exception("Empty response")
                 _generatedGuide.value = text
             } catch (e: Exception) {
-                _errorMessage.value = "Error generating guide: ${e.message}"
+                _errorMessage.value = parseUserFriendlyErrorMessage(e.message)
             } finally {
                 _isLoading.value = false
             }
@@ -203,6 +267,7 @@ class GeminiViewModel : ViewModel() {
                     text(prompt)
                 }
 
+                val generativeModel = getGenerativeModel()
                 val response = generativeModel.generateContent(inputContent)
                 val responseText = response.text?.trim() ?: throw Exception("Empty response from AI")
                 Log.d("GeminiViewModel", "AI Raw Response: $responseText")
@@ -214,7 +279,7 @@ class GeminiViewModel : ViewModel() {
                 _machineScanResult.value = result
             } catch (e: Exception) {
                 Log.e("GeminiViewModel", "Error fetching machine info", e)
-                _errorMessage.value = "Failed to fetch machine info: ${e.message}"
+                _errorMessage.value = parseUserFriendlyErrorMessage(e.message)
             } finally {
                 _isLoading.value = false
             }
