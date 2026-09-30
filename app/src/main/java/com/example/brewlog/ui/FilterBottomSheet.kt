@@ -41,7 +41,8 @@ fun FilterBottomSheet(
     val activeFilterCount = (if (filterState.selectedRoasts.isNotEmpty()) 1 else 0) +
             (if (filterState.selectedFlavorTags.isNotEmpty()) 1 else 0) +
             (if (filterState.ratingRange != 1f..10f) 1 else 0) +
-            (if (filterState.sweetnessRange != 1f..5f || filterState.acidityRange != 1f..5f || filterState.bodyRange != 1f..5f || filterState.bitternessRange != 1f..5f) 1 else 0)
+            (if (filterState.sweetnessRange != 1f..5f || filterState.acidityRange != 1f..5f || filterState.bodyRange != 1f..5f || filterState.bitternessRange != 1f..5f) 1 else 0) +
+            (if (filterState.showArchived) 1 else 0)
 
     Column(
         modifier = Modifier
@@ -118,6 +119,13 @@ fun FilterBottomSheet(
                 )
             }
         }
+
+        // Show Archived Beans Toggle
+        CremaGlassFilterToggleCard(
+            title = stringResource(R.string.show_archived_shots),
+            checked = filterState.showArchived,
+            onCheckedChange = { onFilterChange(filterState.copy(showArchived = it)) }
+        )
 
         // Rating Range
         CremaGlassFilterCard(title = stringResource(R.string.rating_range)) {
@@ -223,6 +231,35 @@ fun CremaGlassFilterCard(
                 color = MaterialTheme.colorScheme.primary
             )
             content()
+        }
+    }
+}
+
+@Composable
+fun CremaGlassFilterToggleCard(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    CremaGlassCard(
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
         }
     }
 }

@@ -70,7 +70,7 @@ fun DialInScreen(
     initialDose: Double? = null,
     initialGrindSize: Float? = null
 ) {
-    val beans by viewModel.allLogs.collectAsState()
+    val beans by viewModel.activeLogs.collectAsState()
 
     var selectedBeanId by remember { mutableIntStateOf(initialBeanId ?: -1) }
     var basketType by remember { mutableStateOf(initialBasketType ?: "double") }

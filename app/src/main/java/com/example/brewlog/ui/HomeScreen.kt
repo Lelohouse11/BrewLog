@@ -11,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -63,6 +64,12 @@ fun HomeScreen(
     val glassBg = if (isDark) EspressoGlassBg else VellumGlassBg
     val glassBorder = if (isDark) CremaAmber.copy(alpha = 0.35f) else CremaAmberDark.copy(alpha = 0.35f)
     val glowColor = if (isDark) CremaAmber else CremaAmberDark
+
+    val activeFilterCount = (if (filterState.selectedRoasts.isNotEmpty()) 1 else 0) +
+            (if (filterState.selectedFlavorTags.isNotEmpty()) 1 else 0) +
+            (if (filterState.ratingRange != 1f..10f) 1 else 0) +
+            (if (filterState.sweetnessRange != 1f..5f || filterState.acidityRange != 1f..5f || filterState.bodyRange != 1f..5f || filterState.bitternessRange != 1f..5f) 1 else 0) +
+            (if (filterState.showArchived) 1 else 0)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -133,7 +140,23 @@ fun HomeScreen(
                         }
 
                         IconButton(onClick = { showFilters.value = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.cd_filter), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.FilterList,
+                                    contentDescription = stringResource(R.string.cd_filter),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                if (activeFilterCount > 0) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = CircleShape,
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .align(Alignment.TopEnd)
+                                    ) {}
+                                }
+                            }
                         }
                     }
                 }
@@ -175,8 +198,8 @@ fun HomeScreen(
             if (logs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CoffeeEmptyState(
-                        title = stringResource(R.string.no_brews_found),
-                        description = stringResource(R.string.add_first_brew)
+                        title = if (filterState.showArchived) stringResource(R.string.no_archived_brews_found) else stringResource(R.string.no_brews_found),
+                        description = if (filterState.showArchived) "" else stringResource(R.string.add_first_brew)
                     )
                 }
             } else {
@@ -209,6 +232,8 @@ fun HomeScreen(
                                 expandedLogId = if (expandedLogId == log.id) null else log.id
                             },
                             onDelete = { viewModel.deleteLog(log) },
+                            onArchive = { viewModel.archiveLog(log) },
+                            onUnarchive = { viewModel.unarchiveLog(log) },
                             onEdit = { onNavigateToEditBrew(log.id) },
                             onQuickEditRoastDate = { quickEditLog = log },
                             onNavigateToDialIn = onNavigateToDialIn,
@@ -273,7 +298,9 @@ fun BrewLogItem(
     onEdit: () -> Unit,
     onQuickEditRoastDate: () -> Unit,
     onNavigateToDialIn: (Int, String, Double, Float) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onArchive: () -> Unit = {},
+    onUnarchive: () -> Unit = {}
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -326,6 +353,22 @@ fun BrewLogItem(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (log.isArchived) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Text(stringResource(R.string.archived_badge), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
+                    }
+                }
                 FreshnessBadge(
                     roastDateString = log.roastDate,
                     onQuickEditDate = onQuickEditRoastDate
@@ -454,7 +497,7 @@ fun BrewLogItem(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                // Actions Row: Delete, Edit & Dial-In
+                // Actions Row: Delete, Archive/Unarchive, Edit & Dial-In
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
@@ -469,7 +512,29 @@ fun BrewLogItem(
                         Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelMedium)
                     }
 
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(4.dp))
+
+                    if (log.isArchived) {
+                        TextButton(
+                            onClick = onUnarchive,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Icon(Icons.Default.Unarchive, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.unarchive), style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        TextButton(
+                            onClick = onArchive,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.archive), style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+
+                    Spacer(Modifier.width(4.dp))
 
                     OutlinedButton(
                         onClick = onEdit,

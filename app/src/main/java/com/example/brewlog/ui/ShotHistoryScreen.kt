@@ -40,7 +40,6 @@ import com.example.brewlog.ui.theme.BaristaMonospaceFontFamily
 import com.example.brewlog.util.ExtractionEngine
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.brewlog.data.BrewLog
 import com.example.brewlog.ui.theme.CremaAmber
 import com.example.brewlog.ui.theme.CremaAmberDark
 import com.example.brewlog.ui.theme.EspressoGlassBg
@@ -54,7 +53,7 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 
-enum class ShotSortOption { DATE, QUALITY }
+enum class ShotSortOption { DATE, QUALITY, NAME }
 
 fun ShotLog.qualityScore(): Int {
     val deviation = abs(acidityEval) + abs(bitternessEval) + abs(bodyEval)
@@ -70,9 +69,9 @@ fun ShotHistoryScreen(
     val shotLogs by viewModel.allShotLogs.collectAsState()
     val beans by viewModel.allLogs.collectAsState()
     
-    var selectedBeanId by remember { mutableStateOf<Int?>(null) }
     var selectedBasketType by remember { mutableStateOf<String?>(null) }
     var shotSortOption by remember { mutableStateOf(ShotSortOption.DATE) }
+    var showArchivedBeans by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
 
@@ -84,13 +83,18 @@ fun ShotHistoryScreen(
     val glassBorder = if (isDark) CremaAmber.copy(alpha = 0.35f) else CremaAmberDark.copy(alpha = 0.35f)
     val glowColor = if (isDark) CremaAmber else CremaAmberDark
 
-    val activeFilterCount = (if (selectedBeanId != null) 1 else 0) +
-            (if (selectedBasketType != null) 1 else 0) +
-            (if (shotSortOption != ShotSortOption.DATE) 1 else 0)
+    val activeFilterCount = (if (selectedBasketType != null) 1 else 0) +
+            (if (shotSortOption != ShotSortOption.DATE) 1 else 0) +
+            (if (showArchivedBeans) 1 else 0)
 
-    val filteredLogs = remember(shotLogs, beans, selectedBeanId, selectedBasketType, shotSortOption, searchQuery) {
+    val filteredLogs = remember(shotLogs, beans, selectedBasketType, shotSortOption, searchQuery, showArchivedBeans) {
         shotLogs.filter { item ->
             val bean = beans.find { it.id == item.shotLog.beanId }
+            val isBeanArchived = bean?.isArchived == true
+            if (isBeanArchived && !showArchivedBeans) {
+                return@filter false
+            }
+
             val coffeeName = bean?.coffeeName ?: item.beanName
             val roaster = bean?.roaster ?: ""
 
@@ -98,10 +102,9 @@ fun ShotHistoryScreen(
                     coffeeName.contains(searchQuery, ignoreCase = true) ||
                     roaster.contains(searchQuery, ignoreCase = true)
 
-            val beanMatch = (selectedBeanId == null || item.shotLog.beanId == selectedBeanId)
             val basketMatch = (selectedBasketType == null || item.shotLog.basketType.lowercase() == selectedBasketType)
 
-            matchesSearch && beanMatch && basketMatch
+            matchesSearch && basketMatch
         }.sortedWith { a, b ->
             when (shotSortOption) {
                 ShotSortOption.DATE -> b.shotLog.timestamp.compareTo(a.shotLog.timestamp)
@@ -113,6 +116,14 @@ fun ShotHistoryScreen(
                     } else {
                         b.shotLog.timestamp.compareTo(a.shotLog.timestamp)
                     }
+                }
+                ShotSortOption.NAME -> {
+                    val beanA = beans.find { it.id == a.shotLog.beanId }
+                    val nameA = beanA?.coffeeName ?: a.beanName
+                    val beanB = beans.find { it.id == b.shotLog.beanId }
+                    val nameB = beanB?.coffeeName ?: b.beanName
+                    val comp = nameA.compareTo(nameB, ignoreCase = true)
+                    if (comp != 0) comp else b.shotLog.timestamp.compareTo(a.shotLog.timestamp)
                 }
             }
         }
@@ -228,17 +239,16 @@ fun ShotHistoryScreen(
                         contentColor = MaterialTheme.colorScheme.onSurface
                     ) {
                         ShotHistoryFilterBottomSheet(
-                            beans = beans,
-                            selectedBeanId = selectedBeanId,
                             selectedBasketType = selectedBasketType,
                             shotSortOption = shotSortOption,
-                            onBeanSelected = { selectedBeanId = it },
+                            showArchivedBeans = showArchivedBeans,
                             onBasketSelected = { selectedBasketType = it },
                             onSortSelected = { shotSortOption = it },
+                            onShowArchivedBeansChange = { showArchivedBeans = it },
                             onReset = {
-                                selectedBeanId = null
                                 selectedBasketType = null
                                 shotSortOption = ShotSortOption.DATE
+                                showArchivedBeans = false
                             },
                             onApply = {
                                 scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -721,19 +731,18 @@ private data class BadgeConfig(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShotHistoryFilterBottomSheet(
-    beans: List<BrewLog>,
-    selectedBeanId: Int?,
     selectedBasketType: String?,
     shotSortOption: ShotSortOption,
-    onBeanSelected: (Int?) -> Unit,
+    showArchivedBeans: Boolean = false,
     onBasketSelected: (String?) -> Unit,
     onSortSelected: (ShotSortOption) -> Unit,
+    onShowArchivedBeansChange: (Boolean) -> Unit = {},
     onReset: () -> Unit,
     onApply: () -> Unit
 ) {
-    val activeFilterCount = (if (selectedBeanId != null) 1 else 0) +
-            (if (selectedBasketType != null) 1 else 0) +
-            (if (shotSortOption != ShotSortOption.DATE) 1 else 0)
+    val activeFilterCount = (if (selectedBasketType != null) 1 else 0) +
+            (if (shotSortOption != ShotSortOption.DATE) 1 else 0) +
+            (if (showArchivedBeans) 1 else 0)
 
     Column(
         modifier = Modifier
@@ -806,83 +815,20 @@ fun ShotHistoryFilterBottomSheet(
                     onClick = { onSortSelected(ShotSortOption.QUALITY) },
                     label = stringResource(R.string.sort_quality)
                 )
-            }
-        }
-
-        // Bean Selection (Dropbox / Dropdown Menu)
-        CremaGlassFilterCard(title = stringResource(R.string.filter_by_bean)) {
-            var expanded by remember { mutableStateOf(false) }
-            val selectedBean = beans.find { it.id == selectedBeanId }
-            val displayText = selectedBean?.let { "${it.coffeeName} (${it.roaster})" } ?: stringResource(R.string.all_beans)
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }
-            ) {
-                OutlinedTextField(
-                    value = displayText,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.filter_by_bean)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
-                        .fillMaxWidth()
+                CremaFilterChip(
+                    selected = shotSortOption == ShotSortOption.NAME,
+                    onClick = { onSortSelected(ShotSortOption.NAME) },
+                    label = stringResource(R.string.sort_name)
                 )
-
-                val isDark = isAppInDarkTheme()
-                val dropdownBg = if (isDark) EspressoGlassBg else VellumGlassBg
-                val dropdownBorder = if (isDark) CremaAmber.copy(alpha = 0.3f) else CremaAmberDark.copy(alpha = 0.3f)
-
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = dropdownBg,
-                    border = BorderStroke(1.dp, dropdownBorder)
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(R.string.all_beans),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = if (selectedBeanId == null) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        onClick = {
-                            onBeanSelected(null)
-                            expanded = false
-                        }
-                    )
-
-                    beans.forEach { bean ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(
-                                        text = bean.coffeeName,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = if (selectedBeanId == bean.id) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                    if (bean.roaster.isNotEmpty()) {
-                                        Text(
-                                            text = bean.roaster,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            },
-                            onClick = {
-                                onBeanSelected(bean.id)
-                                expanded = false
-                            }
-                        )
-                    }
-                }
             }
         }
+
+        // Show Archived Beans Toggle
+        CremaGlassFilterToggleCard(
+            title = stringResource(R.string.show_archived_shots),
+            checked = showArchivedBeans,
+            onCheckedChange = onShowArchivedBeansChange
+        )
 
         // Basket Size Section
         CremaGlassFilterCard(title = stringResource(R.string.filter_by_basket)) {

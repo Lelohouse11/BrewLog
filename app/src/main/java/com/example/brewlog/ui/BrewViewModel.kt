@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,7 +36,8 @@ data class FilterState(
     val bodyRange: ClosedFloatingPointRange<Float> = 1f..5f,
     val bitternessRange: ClosedFloatingPointRange<Float> = 1f..5f,
     val selectedRoasts: Set<String> = emptySet(),
-    val selectedFlavorTags: Set<String> = emptySet()
+    val selectedFlavorTags: Set<String> = emptySet(),
+    val showArchived: Boolean = false
 )
 
 class BrewViewModel(application: Application) : AndroidViewModel(application) {
@@ -60,6 +62,9 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
         _allLogs, sortOption, filterState, searchQuery
     ) { logs, sort, filter, query ->
         logs.filter { log ->
+            // 0. Archive Filter
+            val matchesArchive = log.isArchived == filter.showArchived
+
             // 1. Search Query
             val matchesSearch = log.coffeeName.contains(query, ignoreCase = true) ||
                                log.roaster.contains(query, ignoreCase = true)
@@ -92,7 +97,7 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
             val matchesFlavor = filter.selectedFlavorTags.isEmpty() || 
                                (log.hasFlavorTags && log.flavorTags.any { filter.selectedFlavorTags.contains(it) })
 
-            matchesSearch && matchesRating && matchesSweetness && matchesAcidity && 
+            matchesArchive && matchesSearch && matchesRating && matchesSweetness && matchesAcidity && 
             matchesBody && matchesBitterness && matchesRoast && matchesFlavor
         }.sortedWith { a, b ->
             when (sort) {
@@ -106,6 +111,14 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    val activeLogs: StateFlow<List<BrewLog>> = _allLogs
+        .map { logs -> logs.filter { !it.isArchived } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     val allLogs: StateFlow<List<BrewLog>> = _allLogs
         .stateIn(
@@ -130,6 +143,18 @@ class BrewViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteLog(log: BrewLog) {
         viewModelScope.launch {
             brewLogDao.deleteLog(log)
+        }
+    }
+
+    fun archiveLog(log: BrewLog) {
+        viewModelScope.launch {
+            brewLogDao.updateLog(log.copy(isArchived = true))
+        }
+    }
+
+    fun unarchiveLog(log: BrewLog) {
+        viewModelScope.launch {
+            brewLogDao.updateLog(log.copy(isArchived = false))
         }
     }
 

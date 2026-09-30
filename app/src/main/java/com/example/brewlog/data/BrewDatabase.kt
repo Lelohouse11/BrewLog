@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [BrewLog::class, EspressoMachine::class, ShotLog::class], version = 13, exportSchema = false)
+@Database(entities = [BrewLog::class, EspressoMachine::class, ShotLog::class], version = 14, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class BrewDatabase : RoomDatabase() {
     abstract fun brewLogDao(): BrewLogDao
@@ -31,10 +31,16 @@ abstract class BrewDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE brew_logs ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): BrewDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, BrewDatabase::class.java, "brew_database")
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                     .fallbackToDestructiveMigration(true)
                     .build()
                     .also { Instance = it }

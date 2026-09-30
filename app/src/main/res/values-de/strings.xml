@@ -16,6 +16,13 @@
     <string name="save">Speichern</string>
     <string name="cancel">Abbrechen</string>
     <string name="delete">Löschen</string>
+    <string name="archive">Archivieren</string>
+    <string name="unarchive">Wiederherstellen</string>
+    <string name="tab_active">Aktiv</string>
+    <string name="tab_archived">Archiv</string>
+    <string name="archived_badge">Archiviert</string>
+    <string name="no_archived_brews_found">Keine archivierten Kaffeebohnen vorhanden.</string>
+    <string name="show_archived_shots">Archivierte Bohnen anzeigen</string>
     <string name="edit">Bearbeiten</string>
     <string name="reset">Zurücksetzen</string>
     <string name="back">Zurück</string>

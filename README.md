@@ -44,10 +44,15 @@ A specialty coffee tracking and dial-in application for espresso enthusiasts and
 
 ---
 
-### 🎴 Specialty Coffee Bag Collection (Home Screen)
+### 🎴 Specialty Coffee Bag Collection & Archiving (Home Screen)
+- **Coffee Bean Archiving**: Archive finished coffee bags instead of deleting them. Archived beans keep all historical extraction logs (`ShotLog`) intact without triggering cascading deletes.
+- **Card Actions & Visual Badge**: Coffee cards feature direct **"Archivieren"** (Archive) / **"Wiederherstellen"** (Restore) and **"Löschen"** (Delete) buttons, along with an **"Archiviert"** badge for archived beans.
 - **Ticket-Style Coffee Cards**: Ticket-inspired cards showing roaster branding, origin, and processing method.
 - **Color-Coded SCA Flavor Chips**: Visual flavor note tags (Berry Pink, Cocoa Brown, Citrus Yellow, Jasmine Lavender).
 - **Sensory Radar Chart**: Interactive 4-axis flavor radar chart for Sweetness, Acidity, Body, and Bitterness.
+- **Unified Filter & Sort System**:
+  - Filter Bottom Sheet includes a **"Archivierte Bohnen anzeigen"** toggle card.
+  - Shot History filters support sorting by **Date, Quality Score, and Coffee Name**, with streamlined search.
 
 ---
 
@@ -64,7 +69,7 @@ A specialty coffee tracking and dial-in application for espresso enthusiasts and
 ---
 
 ### 💾 Data Portability & Barista Settings
-- **Room Migration v13**: Safe schema migration (`MIGRATION_12_13`) preserving all user logs, shot histories, and custom machine instructions.
+- **Room Migration v14**: Safe schema migration (`MIGRATION_13_14`) adding `isArchived` flag while preserving all user logs, shot histories, and custom machine instructions.
 - **JSON Import & Export**: Full database backup and restore functionality integrated into Settings.
 - **Barista Precision Controls**: Configurable step sizes for doses ($0.1\text{g}$, $0.5\text{g}$) and grind sizes with haptic vibration feedback.
 
@@ -90,7 +95,7 @@ BrewLog is built with first-class accessibility support to ensure an inclusive e
 
 - **UI Framework:** Jetpack Compose (Material 3 Expressive)
 - **AI SDK:** Google AI Client (Gemini AI)
-- **Database:** Room Persistence Library (Version 12)
+- **Database:** Room Persistence Library (Version 14)
 - **Concurrency & State:** Kotlin Coroutines & Flow (`StateFlow`)
 - **Navigation:** AndroidX Navigation Compose & AndroidX SplashScreen
 - **Background Tasks:** AndroidX WorkManager

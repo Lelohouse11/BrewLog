@@ -16,6 +16,13 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="archive">Archive</string>
+    <string name="unarchive">Restore</string>
+    <string name="tab_active">Active</string>
+    <string name="tab_archived">Archived</string>
+    <string name="archived_badge">Archived</string>
+    <string name="no_archived_brews_found">No archived coffee beans yet.</string>
+    <string name="show_archived_shots">Show archived coffee beans</string>
     <string name="edit">Edit</string>
     <string name="reset">Reset</string>
     <string name="back">Back</string>
