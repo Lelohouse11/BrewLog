@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Done
@@ -35,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.brewlog.R
 import com.example.brewlog.data.EspressoMachine
+import com.example.brewlog.ui.components.AiGradientButton
 import com.example.brewlog.ui.components.CremaGlassCard
 import com.example.brewlog.ui.components.cremaGlow
 import com.example.brewlog.ui.theme.*
@@ -371,37 +371,32 @@ fun EditMachineScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    AiGradientButton(
                         onClick = {
                             activeAiTaskTarget = "water"
                             geminiViewModel.generateMaintenanceGuide(brand, model, "water")
                         },
+                        text = stringResource(R.string.ai_generate_short),
+                        isLoading = isGeneratingAi && activeAiTaskTarget == "water",
                         enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        if (isGeneratingAi && activeAiTaskTarget == "water") {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(4.dp))
-                        } else {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                        }
-                        Text(stringResource(R.string.ai_generate_short), style = MaterialTheme.typography.labelSmall)
-                    }
+                        modifier = Modifier.weight(1f).height(42.dp),
+                        cornerRadius = 12.dp,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                        iconSize = 16.dp,
+                        textStyle = MaterialTheme.typography.labelMedium
+                    )
 
                     OutlinedButton(
                         onClick = { waterGuide = "" },
                         enabled = waterGuide.isNotBlank(),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(42.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -429,37 +424,32 @@ fun EditMachineScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    AiGradientButton(
                         onClick = {
                             activeAiTaskTarget = "descale"
                             geminiViewModel.generateMaintenanceGuide(brand, model, "descale")
                         },
+                        text = stringResource(R.string.ai_generate_short),
+                        isLoading = isGeneratingAi && activeAiTaskTarget == "descale",
                         enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        if (isGeneratingAi && activeAiTaskTarget == "descale") {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(4.dp))
-                        } else {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                        }
-                        Text(stringResource(R.string.ai_generate_short), style = MaterialTheme.typography.labelSmall)
-                    }
+                        modifier = Modifier.weight(1f).height(42.dp),
+                        cornerRadius = 12.dp,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                        iconSize = 16.dp,
+                        textStyle = MaterialTheme.typography.labelMedium
+                    )
 
                     OutlinedButton(
                         onClick = { descaleGuide = "" },
                         enabled = descaleGuide.isNotBlank(),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(42.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -487,37 +477,32 @@ fun EditMachineScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    AiGradientButton(
                         onClick = {
                             activeAiTaskTarget = "backflush"
                             geminiViewModel.generateMaintenanceGuide(brand, model, "backflush")
                         },
+                        text = stringResource(R.string.ai_generate_short),
+                        isLoading = isGeneratingAi && activeAiTaskTarget == "backflush",
                         enabled = !isGeneratingAi && brand.isNotBlank() && model.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        if (isGeneratingAi && activeAiTaskTarget == "backflush") {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(4.dp))
-                        } else {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                        }
-                        Text(stringResource(R.string.ai_generate_short), style = MaterialTheme.typography.labelSmall)
-                    }
+                        modifier = Modifier.weight(1f).height(42.dp),
+                        cornerRadius = 12.dp,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                        iconSize = 16.dp,
+                        textStyle = MaterialTheme.typography.labelMedium
+                    )
 
                     OutlinedButton(
                         onClick = { backflushGuide = "" },
                         enabled = backflushGuide.isNotBlank(),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(42.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.clear_guide), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }

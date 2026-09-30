@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import java.time.Instant
 import java.time.ZoneId
@@ -49,6 +50,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.StrokeCap
@@ -85,11 +87,13 @@ fun Modifier.cremaGlow(
 ): Modifier = this.drawBehind {
     val cornerRadiusPx = borderRadius.toPx()
     val glowRadiusPx = glowRadius.toPx()
-    val strokeWidthPx = 2.dp.toPx()
+    val strokeWidthPx = 1.5.dp.toPx()
 
-    for (i in 1..6) {
-        val offset = (glowRadiusPx * (i / 6f)) + (strokeWidthPx / 2f)
-        val layerAlpha = (alpha * (1f - (i - 1) / 6f) * 0.45f).coerceIn(0f, 1f)
+    val steps = 6
+    for (i in 0 until steps) {
+        val progress = i.toFloat() / (steps - 1)
+        val offset = glowRadiusPx * progress
+        val layerAlpha = (alpha * (1f - progress * 0.75f) * 0.45f).coerceIn(0f, 1f)
 
         val glowPath = Path().apply {
             addRoundRect(
@@ -1330,25 +1334,11 @@ private data class BlendVariety(
 )
 
 /**
- * Premium AI Feature Hero Button with glowing radiant aura and AI Feature badge.
- * Designed to make unique AI capabilities (such as label scanning and machine auto-detection)
- * stand out as key features.
+ * Shared AI Gradient Brush definition for all AI feature buttons.
  */
 @Composable
-fun AiFeatureButton(
-    onClick: () -> Unit,
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    icon: ImageVector = Icons.Default.AutoAwesome,
-    isLoading: Boolean = false,
-    loadingText: String? = null,
-    enabled: Boolean = true
-) {
-    val isDark = isAppInDarkTheme()
-    val haptic = LocalHapticFeedback.current
-
-    val gradientBrush = if (isDark) {
+fun aiGradientBrush(isDark: Boolean = isAppInDarkTheme()): Brush {
+    return if (isDark) {
         Brush.horizontalGradient(
             colors = listOf(
                 Color(0xFF281C28),
@@ -1367,8 +1357,37 @@ fun AiFeatureButton(
             )
         )
     }
+}
 
-    val glowColor = if (isDark) Color(0xFFBA68C8) else Color(0xFFE2A86B)
+/**
+ * Shared AI Glow Color definition for all AI feature buttons.
+ */
+@Composable
+fun aiGlowColor(isDark: Boolean = isAppInDarkTheme()): Color {
+    return if (isDark) Color(0xFFBA68C8) else Color(0xFFE2A86B)
+}
+
+/**
+ * Premium AI Feature Hero Button with glowing radiant aura and AI Feature badge.
+ * Designed to make unique AI capabilities (such as label scanning and machine auto-detection)
+ * stand out as key features.
+ */
+@Composable
+fun AiFeatureButton(
+    onClick: () -> Unit,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    icon: ImageVector = Icons.Default.AutoAwesome,
+    isLoading: Boolean = false,
+    loadingText: String? = null,
+    enabled: Boolean = true
+) {
+    val isDark = isAppInDarkTheme()
+    val haptic = LocalHapticFeedback.current
+
+    val gradientBrush = aiGradientBrush(isDark)
+    val glowColor = aiGlowColor(isDark)
 
     Surface(
         onClick = {
@@ -1381,7 +1400,7 @@ fun AiFeatureButton(
         shape = RoundedCornerShape(20.dp),
         color = Color.Transparent,
         border = BorderStroke(1.5.dp, glowColor.copy(alpha = 0.7f)),
-        shadowElevation = 8.dp,
+        shadowElevation = 0.dp,
         modifier = modifier
             .fillMaxWidth()
             .cremaGlow(color = glowColor, borderRadius = 20.dp, glowRadius = 8.dp, alpha = 0.4f)
@@ -1451,6 +1470,95 @@ fun AiFeatureButton(
             }
         }
     }
+}
+
+/**
+ * Compact or Standard AI Button with the signature BrewLog AI gradient & glowing aura.
+ * Used for AI actions like generating maintenance guides or searching machines with AI.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AiGradientButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Default.AutoAwesome,
+    isLoading: Boolean = false,
+    enabled: Boolean = true,
+    cornerRadius: Dp = 14.dp,
+    shape: Shape = RoundedCornerShape(cornerRadius),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+    iconSize: Dp = 18.dp,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    glowRadius: Dp = 2.5.dp,
+    glowAlpha: Float = 0.25f
+) {
+    val isDark = isAppInDarkTheme()
+    val haptic = LocalHapticFeedback.current
+
+    val gradientBrush = aiGradientBrush(isDark)
+    val glowColor = aiGlowColor(isDark)
+
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides 0.dp
+    ) {
+        Surface(
+            onClick = {
+                if (!isLoading && enabled) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onClick()
+                }
+            },
+            enabled = enabled && !isLoading,
+            shape = shape,
+            color = Color.Transparent,
+            border = BorderStroke(
+                1.dp,
+                if (enabled) glowColor.copy(alpha = 0.7f)
+                else MaterialTheme.colorScheme.outlineVariant
+            ),
+            shadowElevation = 0.dp,
+            modifier = modifier.then(
+                if (enabled && !isLoading) Modifier.cremaGlow(color = glowColor, borderRadius = cornerRadius, glowRadius = glowRadius, alpha = glowAlpha)
+                else Modifier
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(
+                        brush = if (enabled) gradientBrush else SolidColor(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    )
+                    .padding(contentPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(iconSize),
+                            color = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
+                Text(
+                    text = text,
+                    style = textStyle,
+                    fontWeight = FontWeight.Bold,
+                    color = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
 }
 
 /**

@@ -17,9 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -424,43 +422,13 @@ fun EspressoMachineScreen(
                     },
                     confirmButton = {
                         if (!isScanning) {
-                            Surface(
+                            AiGradientButton(
                                 onClick = { geminiViewModel.fetchMachineInfo(setupBrand, setupModel) },
+                                text = stringResource(R.string.find_with_ai),
                                 enabled = setupBrand.isNotBlank() && setupModel.isNotBlank(),
-                                shape = RoundedCornerShape(14.dp),
-                                color = Color.Transparent,
-                                border = BorderStroke(1.dp, if (setupBrand.isNotBlank() && setupModel.isNotBlank()) CremaAmber else MaterialTheme.colorScheme.outlineVariant)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            brush = if (setupBrand.isNotBlank() && setupModel.isNotBlank()) {
-                                                Brush.horizontalGradient(listOf(Color(0xFF8E44AD), Color(0xFFC88A58)))
-                                            } else {
-                                                SolidColor(MaterialTheme.colorScheme.surfaceVariant)
-                                            }
-                                        )
-                                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.AutoAwesome,
-                                            contentDescription = null,
-                                            tint = if (setupBrand.isNotBlank() && setupModel.isNotBlank()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.find_with_ai),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (setupBrand.isNotBlank() && setupModel.isNotBlank()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
+                                cornerRadius = 14.dp,
+                                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
+                            )
                         }
                     },
                     dismissButton = {
@@ -825,7 +793,7 @@ private fun MaintenanceGuideScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    AiGradientButton(
                         onClick = {
                             geminiViewModel.generateMaintenanceGuide(
                                 brand = machine.brand,
@@ -833,14 +801,11 @@ private fun MaintenanceGuideScreen(
                                 taskType = guideInfo.taskType
                             )
                         },
-                        shape = RoundedCornerShape(12.dp),
+                        text = stringResource(R.string.generate_ai_guide),
+                        isLoading = isGenerating,
                         modifier = Modifier.weight(1f).height(48.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.generate_ai_guide), style = MaterialTheme.typography.labelMedium)
-                    }
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
                     Button(
                         onClick = {
