@@ -44,7 +44,8 @@ import kotlin.time.Duration.Companion.milliseconds
 fun HomeScreen(
     viewModel: BrewViewModel,
     onNavigateToAddBrew: () -> Unit,
-    onNavigateToEditBrew: (Int) -> Unit
+    onNavigateToEditBrew: (Int) -> Unit,
+    onNavigateToDialIn: (Int, String, Double, Float) -> Unit = { _, _, _, _ -> }
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
@@ -210,6 +211,7 @@ fun HomeScreen(
                             onDelete = { viewModel.deleteLog(log) },
                             onEdit = { onNavigateToEditBrew(log.id) },
                             onQuickEditRoastDate = { quickEditLog = log },
+                            onNavigateToDialIn = onNavigateToDialIn,
                             modifier = Modifier
                                 .animateItem()
                                 .graphicsLayer {
@@ -270,6 +272,7 @@ fun BrewLogItem(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
     onQuickEditRoastDate: () -> Unit,
+    onNavigateToDialIn: (Int, String, Double, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val rotation by animateFloatAsState(
@@ -278,13 +281,21 @@ fun BrewLogItem(
         label = "rotation"
     )
 
+    val dialInActionLabel = stringResource(R.string.dial_in_button)
     val editActionLabel = stringResource(R.string.edit)
     val deleteActionLabel = stringResource(R.string.delete)
+
+    val basketType = if (log.isDoubleSelected) "double" else "single"
+    val dose = if (log.isDoubleSelected && log.doubleGrams > 0) log.doubleGrams else log.singleGrams
 
     CremaGlassCard(
         onClick = onToggleExpand,
         modifier = modifier.semantics(mergeDescendants = true) {
             customActions = listOf(
+                CustomAccessibilityAction(label = dialInActionLabel) {
+                    onNavigateToDialIn(log.id, basketType, dose, log.grindSize)
+                    true
+                },
                 CustomAccessibilityAction(label = editActionLabel) { onEdit(); true },
                 CustomAccessibilityAction(label = deleteActionLabel) { onDelete(); true }
             )
@@ -443,7 +454,7 @@ fun BrewLogItem(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                // Actions
+                // Actions Row: Delete, Edit & Dial-In
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
@@ -457,15 +468,39 @@ fun BrewLogItem(
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelMedium)
                     }
-                    Spacer(Modifier.width(8.dp))
-                    FilledTonalButton(
+
+                    Spacer(Modifier.width(6.dp))
+
+                    OutlinedButton(
                         onClick = onEdit,
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.edit), style = MaterialTheme.typography.labelMedium)
+                    }
+
+                    Spacer(Modifier.width(6.dp))
+
+                    Button(
+                        onClick = {
+                            onNavigateToDialIn(log.id, basketType, dose, log.grindSize)
+                        },
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalCafe,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.dial_in_button),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

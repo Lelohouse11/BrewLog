@@ -120,7 +120,10 @@ class MainActivity : AppCompatActivity() {
                                 HomeScreen(
                                     viewModel = viewModel,
                                     onNavigateToAddBrew = { navController.navigate("add_brew") },
-                                    onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") }
+                                    onNavigateToEditBrew = { logId -> navController.navigate("edit_brew/$logId") },
+                                    onNavigateToDialIn = { beanId, basketType, dose, grind ->
+                                        navController.navigate("dial_in/$beanId/$basketType/${dose.toFloat()}/$grind")
+                                    }
                                 )
                             }
                             composable("espresso_machine") {
