@@ -118,8 +118,3 @@ Run the included build script to compile a fresh APK:
 generate_apk.bat
 ```
 The output APK will be placed in `app\build\outputs\apk\debug\app-debug.apk`.
-
----
-
-## 📁 Repository
-Official Repository: **[Lelohouse11/BrewLog](https://github.com/Lelohouse11/BrewLog)**
